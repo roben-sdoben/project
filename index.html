@@ -1,0 +1,2122 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Геометрия — Генератор чертежей ОГЭ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#e8e4df;--card:#faf9f7;--ink:#1b1b1e;--muted:#8a8680;--accent:#b44a2d;
+  --accent2:#2d6b4f;--border:#d4d0cb;--input-bg:#f3f1ee;
+  --font-display:'Cormorant Garamond',Georgia,serif;
+  --font-body:'DM Sans',-apple-system,sans-serif;
+}
+html{font-size:16px}
+body{font-family:var(--font-body);background:var(--bg);color:var(--ink);min-height:100vh;
+  background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c8c4be' fill-opacity='0.25'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+.shell{max-width:1020px;margin:0 auto;padding:40px 24px 80px}
+header{text-align:center;margin-bottom:40px}
+header h1{font-family:var(--font-display);font-size:2.6rem;font-weight:600;letter-spacing:-0.02em;line-height:1.15;color:var(--ink)}
+header h1 span{color:var(--accent)}
+header p{font-size:.95rem;color:var(--muted);margin-top:8px;letter-spacing:.01em}
+.card{background:var(--card);border-radius:20px;box-shadow:0 2px 4px rgba(0,0,0,.04),0 12px 40px rgba(0,0,0,.06);overflow:hidden;border:1px solid var(--border)}
+.top{padding:32px 32px 28px;border-bottom:1px solid var(--border)}
+.top label{display:block;font-family:var(--font-display);font-size:1.1rem;font-weight:600;color:var(--ink);margin-bottom:12px}
+textarea{width:100%;min-height:100px;padding:14px 18px;border:1.5px solid var(--border);border-radius:12px;
+  font-family:var(--font-body);font-size:.95rem;color:var(--ink);background:var(--input-bg);
+  resize:vertical;transition:.2s;line-height:1.65}
+textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(180,74,45,.1);background:var(--card)}
+textarea::placeholder{color:#b0aca6}
+.bar{display:flex;gap:10px;align-items:center;margin-top:16px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 24px;border:none;border-radius:10px;
+  font-family:var(--font-body);font-size:.9rem;font-weight:600;cursor:pointer;transition:.15s}
+.btn-go{background:var(--accent);color:#fff;box-shadow:0 2px 10px rgba(180,74,45,.25)}
+.btn-go:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.btn-go:active{transform:translateY(0)}
+.btn-cl{background:transparent;color:var(--muted);border:1.5px solid var(--border)}
+.btn-cl:hover{background:var(--input-bg);color:var(--ink)}
+select{padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:var(--font-body);
+  font-size:.88rem;color:var(--muted);background:var(--input-bg);cursor:pointer;max-width:300px}
+.nfo{display:none;margin-top:14px;padding:12px 16px;border-radius:10px;font-size:.84rem;line-height:1.5}
+.nfo.vis{display:block}
+.nfo-ok{background:rgba(45,107,79,.08);color:var(--accent2);border:1px solid rgba(45,107,79,.15)}
+.nfo-err{background:rgba(180,74,45,.06);color:var(--accent);border:1px solid rgba(180,74,45,.12)}
+.bot{padding:32px;min-height:280px;position:relative;display:flex;flex-direction:column;align-items:center}
+.ph{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:260px;color:var(--muted);text-align:center;opacity:.5}
+.ph svg{width:64px;height:64px;margin-bottom:16px;stroke:var(--muted);fill:none;stroke-width:1.5}
+#svg-box{width:100%;display:flex;justify-content:center}
+#svg-box svg{max-width:100%;height:auto}
+.dlbar{display:none;gap:10px;margin-top:20px;padding-top:20px;border-top:1px solid var(--border);width:100%;justify-content:flex-end}
+.dlbar.vis{display:flex}
+footer{text-align:center;margin-top:40px;color:var(--muted);font-size:.8rem;letter-spacing:.02em}
+@media(max-width:640px){
+  .shell{padding:20px 12px 40px}
+  header h1{font-size:1.8rem}
+  .top,.bot{padding:20px 18px}
+  .bar{flex-direction:column;align-items:stretch}
+  select{max-width:100%}
+  .btn{justify-content:center}
+}
+/* ---- Examples Modal ---- */
+.btn-ex{background:var(--accent2);color:#fff;box-shadow:0 2px 10px rgba(45,107,79,.25)}
+.btn-ex:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.btn-ex:active{transform:translateY(0)}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(27,27,30,.55);z-index:1000;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);padding:20px;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--card);border-radius:24px;width:100%;max-width:760px;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,.18);border:1px solid var(--border);overflow:hidden}
+.modal-head{padding:24px 28px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-head h2{font-family:var(--font-display);font-size:1.45rem;font-weight:600;color:var(--ink)}
+.modal-close{background:none;border:none;cursor:pointer;color:var(--muted);font-size:1.4rem;line-height:1;padding:4px 8px;border-radius:8px;transition:.15s}
+.modal-close:hover{background:var(--input-bg);color:var(--ink)}
+.modal-tabs{display:flex;gap:6px;padding:14px 28px 0;flex-wrap:wrap;flex-shrink:0}
+.mtab{padding:7px 14px;border-radius:20px;font-size:.8rem;font-weight:600;border:1.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:.15s;font-family:var(--font-body)}
+.mtab:hover{background:var(--input-bg);color:var(--ink)}
+.mtab.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.modal-body{overflow-y:auto;padding:16px 28px 24px;flex:1}
+.ex-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:560px){.ex-grid{grid-template-columns:1fr}.modal-head h2{font-size:1.1rem}.modal-tabs{padding:10px 16px 0}.modal-body{padding:12px 16px 20px}}
+.ex-card{padding:13px 16px;border-radius:12px;border:1.5px solid var(--border);background:var(--input-bg);cursor:pointer;transition:.15s;text-align:left}
+.ex-card:hover{border-color:var(--accent2);background:#f0f6f2;transform:translateY(-1px);box-shadow:0 4px 14px rgba(45,107,79,.12)}
+.ex-card:active{transform:translateY(0)}
+.ex-card-title{font-size:.82rem;font-weight:600;color:var(--ink);margin-bottom:5px;line-height:1.3}
+.ex-card-text{font-size:.75rem;color:var(--muted);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+</style>
+</head>
+<body>
+<div class="shell">
+<header>
+  <h1>Генератор <span>чертежей</span></h1>
+  <p></p>
+</header>
+<div class="card">
+  <div class="top">
+    <label for="ta">Условие задачи</label>
+    <textarea id="ta" rows="4" placeholder="Введите условие задачи..."></textarea>
+    <div class="bar">
+      <button class="btn btn-go" id="gen">Построить чертёж</button>
+      <button class="btn btn-ex" id="exBtn">Примеры задач</button>
+      <button class="btn btn-cl" id="clr">Очистить</button>
+      <select id="ex" style="display:none"><option value="">Примеры задач…</option></select>
+    </div>
+    <div class="nfo nfo-ok" id="nfo"></div>
+    <div class="nfo nfo-err" id="err"></div>
+  </div>
+  <div class="bot">
+    <div class="ph" id="ph">
+      <svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="24"/><polygon points="32,10 12,50 52,50"/></svg>
+      <p>Чертёж появится здесь</p>
+    </div>
+    <div id="svg-box"></div>
+    <div class="dlbar" id="dlbar">
+      <button class="btn btn-cl" id="dl">↓ Скачать SVG</button>
+      <button class="btn btn-cl" id="cp">⎘ Копировать</button>
+    </div>
+  </div>
+</div>
+<footer></footer>
+</div>
+
+<!-- ===== Examples Modal ===== -->
+<div class="modal-overlay" id="exModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-head">
+      <h2 id="modalTitle">Примеры планиметрических задач</h2>
+      <button class="modal-close" id="modalClose" title="Закрыть">✕</button>
+    </div>
+    <div class="modal-tabs" id="modalTabs"></div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+// =====================================================================
+//  UNIVERSAL CONSTRAINT-BASED GEOMETRY ENGINE
+//  Instead of hardcoded scenarios, we:
+//  1. Parse text → extract POINTS, CIRCLES, and CONSTRAINTS
+//  2. Build a system of nonlinear equations from constraints
+//  3. Solve numerically via gradient descent / Gauss-Newton
+//  4. Render all objects
+// =====================================================================
+
+const EXAMPLES=[
+// --- Circle problems ---
+{t:"Касательная и секущая",s:"К окружности с центром в точке O проведены касательная AB и секущая AO. Найдите радиус окружности, если AB = 12 см, AO = 13 см."},
+{t:"Хорда ⊥ радиусу",s:"Радиус OB окружности с центром O пересекает хорду AC в точке D и перпендикулярен ей. BD = 1, радиус окружности равен 5."},
+{t:"Вписанный угол на хорду = R",s:"Найдите величину вписанного угла α опирающегося на хорду AB равную радиусу окружности."},
+{t:"Прямоуг. △ + описанная окр.",s:"В треугольнике ABC угол C равен 90°, AC = 30, BC = 5√13. Найдите радиус описанной окружности."},
+{t:"Две касательные из точки",s:"Из точки A удалённой от центра окружности радиуса 5 на расстояние 13 проведены две касательные к окружности. Точки касания B и C."},
+{t:"Касат. + секущая через центр",s:"Из точки A к окружности с центром O и радиусом 8 проведены касательная AB и секущая через центр O. AB = 15."},
+{t:"Хорда и расстояние до центра",s:"Хорда AB окружности с центром O и радиусом 10 равна 16. H — основание перпендикуляра из O на AB."},
+// --- Triangle problems ---
+{t:"△ с высотой и медианой",s:"В треугольнике ABC AB = 10, BC = 8, AC = 6. Проведены высота AH и медиана BM."},
+{t:"△ с биссектрисой",s:"В треугольнике ABC AB = 12, BC = 8, AC = 10. Проведена биссектриса AD."},
+{t:"Тупоугольный △ с высотой",s:"В тупоугольном треугольнике ABC угол B равен 120°. Проведена высота AH."},
+{t:"Тупоугольный △ (авто)",s:"В треугольнике KSD угол S равен 130°. Проведена высота KH."},
+{t:"Тупоугольный △ без углов",s:"В тупоугольном треугольнике ABC проведена высота BH и медиана AM."},
+{t:"Вписанный равносторонний △",s:"В окружности радиусом 5 вписан равносторонний треугольник ABC."},
+{t:"Вписанный равнобедренный △",s:"В окружности радиусом 10 вписан равнобедренный треугольник ABC с основанием BC = 12."},
+// --- Quadrilateral problems ---
+{t:"Прямоугольная трапеция",s:"В прямоугольной трапеции ABCD основания AD = 10 и BC = 6. Высота трапеции равна 8."},
+{t:"Равнобокая трапеция + диагональ",s:"В равнобедренной трапеции ABCD основания AD = 14, BC = 8, боковая сторона AB = 5. Проведена диагональ AC."},
+{t:"Параллелограмм + диагонали",s:"Параллелограмм ABCD, AB = 6, AD = 10, угол A = 60°. Проведены диагонали AC и BD, пересекаются в точке O."},
+{t:"Ромб + диагонали",s:"Ромб ABCD со стороной 8 и углом A = 60°. Диагонали пересекаются в точке O."},
+{t:"Вписанная окружность в △",s:"В треугольнике ABC AB = 13, BC = 14, AC = 15. Вписанная окружность с центром I касается стороны BC в точке D."},
+{t:"Серединный перпендикуляр",s:"Отрезок AB = 10. Проведён серединный перпендикуляр, точка M — середина AB. На перпендикуляре отмечена точка P, PM = 7."},
+// --- Inscribed & central angle problems ---
+{t:"Центральный угол AOB = 120°",s:"В окружности с центром O и радиусом 6 проведён центральный угол AOB = 120°."},
+{t:"Вписанный угол ACB = 35°",s:"В окружности с центром O точки A, B, C лежат на окружности. Вписанный угол ACB = 35°. Радиус окружности 6."},
+{t:"Центральный и вписанный угол",s:"В окружности с центром O и радиусом 5 проведены центральный угол AOB и вписанный угол ACB, опирающиеся на одну дугу AB. Центральный угол AOB = 80°."},
+{t:"Вписанный угол на диаметр",s:"В окружности с центром O AB — диаметр. Точка C лежит на окружности. Найдите угол ACB. Радиус 7."},
+{t:"Два вписанных угла на одну дугу",s:"В окружности с центром O и радиусом 6 точки A, B, C, D лежат на окружности. Вписанные углы ACB и ADB опираются на одну дугу AB. Угол ACB = 40°."},
+{t:"Вписанный угол и касательная",s:"К окружности с центром O и радиусом 5 в точке B проведена касательная. Точки A и C лежат на окружности. Вписанный угол ABC = 50°."},
+{t:"Окружность на стороне △, касается другой",s:"Окружность с центром на стороне AC треугольника ABC проходит через вершину C и касается прямой AB в точке B. Найдите AC, если диаметр окружности равен 8, а AB = 3."},
+// --- Tasks from screenshots (Тип 23 ОГЭ) ---
+{t:"Равноб. трапеция, диагонали ⊥",s:"В равнобедренной трапеции ABCD диагонали перпендикулярны. Высота трапеции равна 19. Найдите среднюю линию."},
+{t:"Отрезки на параллельных",s:"Отрезки AB и DC лежат на параллельных прямых, а отрезки AC и BD пересекаются в точке M. Найдите MC, если AB = 14, DC = 42, AC = 52."},
+{t:"△ угол между высотой и биссектрисой",s:"В треугольнике ABC углы A и C равны 20° и 60° соответственно. Найдите угол между высотой BH и биссектрисой BD."},
+{t:"Прямоуг. △ + окр. на высоте",s:"Точка H является основанием высоты BH проведённой из вершины прямого угла B прямоугольного треугольника ABC. Окружность с диаметром BH пересекает стороны AB и CB в точках P и K соответственно. Найдите PK если BH = 12."},
+{t:"Ромб: расст. до стороны",s:"Расстояние от точки пересечения диагоналей ромба до одной из его сторон равно 10, а одна из диагоналей ромба равна 40. Найдите углы ромба."},
+{t:"Угол касательной и дуга",s:"Найдите угол ACO, если его сторона CA касается окружности, O — центр окружности, а дуга AD окружности заключённая внутри этого угла равна 130°."},
+{t:"△ по углам + описанная окр.",s:"В треугольнике ABC угол B равен 56°, угол C равен 64°, BC = 3√3. Найдите радиус описанной около этого треугольника окружности."},
+{t:"Биссектрисы пар-мма на BC",s:"Биссектрисы углов A и D параллелограмма ABCD пересекаются в точке лежащей на стороне BC. Найдите BC если AB = 34."},
+{t:"AD ⊥ медиане, делит угол",s:"Прямая AD перпендикулярная медиане BM треугольника ABC делит угол BAC пополам. Найдите сторону AB если сторона AC = 4."},
+// --- Quadrilateral tasks from new screenshots ---
+{t:"Равноб. трапеция по основаниям и периметру",s:"Основания равнобедренной трапеции ABCD равны 8 и 18, а периметр равен 56. Найдите площадь трапеции."},
+{t:"Отрезок середин диагоналей трапеции",s:"Основания трапеции ABCD равны 9 и 15. Найдите отрезок соединяющий середины диагоналей трапеции."},
+{t:"Биссектрисы пар-мма на BC, BC=40",s:"Биссектрисы углов A и D параллелограмма ABCD пересекаются в точке лежащей на стороне BC. Найдите AB если BC = 40."},
+{t:"Ромб: расст. до стороны 19, d=76",s:"Расстояние от точки пересечения диагоналей ромба до одной из его сторон равно 19, а одна из диагоналей ромба равна 76. Найдите углы ромба."},
+{t:"Ромб: высота делит сторону",s:"Высота AH ромба ABCD делит сторону CD на отрезки DH = 21 и CH = 8. Найдите высоту ромба."},
+{t:"Биссектрисы трапеции при стороне AB",s:"Биссектрисы углов A и B при боковой стороне AB трапеции ABCD пересекаются в точке F. Найдите AB если AF = 24, BF = 32."},
+{t:"Прямоугольник: P=56, d=27",s:"Периметр прямоугольника равен 56, а диагональ равна 27. Найдите площадь этого прямоугольника."},
+{t:"Трапеция: AB=CD, высота CH",s:"В трапеции ABCD боковые стороны AB и CD равны, CH — высота проведённая к большему основанию AD. Найдите HD если средняя линия KM трапеции равна 16, а меньшее основание BC равно 4."},
+{t:"Биссектриса угла A пар-мма",s:"Биссектриса угла A параллелограмма ABCD пересекает его сторону BC в точке E. Найдите площадь параллелограмма ABCD если BE = 7, EC = 3, а угол ABC = 150."},
+{t:"Биссектрисы A и B пар-мма",s:"Биссектрисы углов A и B параллелограмма ABCD пересекаются в точке K. Найдите площадь параллелограмма если BC = 19, а расстояние от точки K до стороны AB равно 7."},
+{t:"Площадь трапеции: d=15,7 ср.л.=10",s:"Найдите площадь трапеции, диагонали которой равны 15 и 7, а средняя линия равна 10."},
+{t:"Боковая сторона трапеции по углам",s:"Найдите боковую сторону AB трапеции ABCD если углы ABC и BCD равны соответственно 60° и 150°, а CD = 33."},
+{t:"Трапеция: AD вдвое > BC и > CD",s:"В трапеции ABCD основание AD вдвое больше основания BC и вдвое больше боковой стороны CD. Угол ADC равен 60°, сторона AB равна 2. Найдите площадь трапеции."},
+];
+
+const GEO=(()=>{
+// ============ MATH HELPERS ============
+const {sqrt,cos,sin,atan2,abs,PI,min,max,hypot}=Math;
+const eps=1e-9;
+const d2r=a=>a*PI/180;
+const r2d=a=>a*180/PI;
+const dist=(a,b)=>hypot(a.x-b.x,a.y-b.y);
+const dot=(ax,ay,bx,by)=>ax*bx+ay*by;
+const cross=(ax,ay,bx,by)=>ax*by-ay*bx;
+const lerp=(a,b,t)=>({x:a.x+(b.x-a.x)*t, y:a.y+(b.y-a.y)*t});
+const mid=(a,b)=>lerp(a,b,.5);
+
+function circumcenter(A,B,C){
+  const D=2*(A.x*(B.y-C.y)+B.x*(C.y-A.y)+C.x*(A.y-B.y));
+  if(abs(D)<eps)return{x:(A.x+B.x+C.x)/3,y:(A.y+B.y+C.y)/3,r:5};
+  const ux=((A.x**2+A.y**2)*(B.y-C.y)+(B.x**2+B.y**2)*(C.y-A.y)+(C.x**2+C.y**2)*(A.y-B.y))/D;
+  const uy=((A.x**2+A.y**2)*(C.x-B.x)+(B.x**2+B.y**2)*(A.x-C.x)+(C.x**2+C.y**2)*(B.x-A.x))/D;
+  return{x:ux,y:uy,r:hypot(A.x-ux,A.y-uy)};
+}
+
+function incenter(A,B,C){
+  const a=dist(B,C),b=dist(A,C),c=dist(A,B),p=a+b+c;
+  const ix=(a*A.x+b*B.x+c*C.x)/p, iy=(a*A.y+b*B.y+c*C.y)/p;
+  const s=p/2;
+  const r=sqrt((s-a)*(s-b)*(s-c)/s);
+  return{x:ix,y:iy,r};
+}
+
+function footPerp(P,A,B){
+  const dx=B.x-A.x,dy=B.y-A.y,len2=dx*dx+dy*dy;
+  if(len2<eps)return{x:A.x,y:A.y};
+  const t=((P.x-A.x)*dx+(P.y-A.y)*dy)/len2;
+  return{x:A.x+t*dx,y:A.y+t*dy};
+}
+
+function lineIntersect(A,B,C,D_){
+  const d1x=B.x-A.x,d1y=B.y-A.y,d2x=D_.x-C.x,d2y=D_.y-C.y;
+  const det=d1x*d2y-d1y*d2x;
+  if(abs(det)<eps)return null;
+  const t=((C.x-A.x)*d2y-(C.y-A.y)*d2x)/det;
+  return{x:A.x+t*d1x,y:A.y+t*d1y};
+}
+
+// Build triangle from 3 sides using law of cosines
+function triFromSides(a,b,c){
+  // B at origin, C on x-axis at distance a, A above
+  const B={x:0,y:0},C={x:a,y:0};
+  const cosB=(a*a+c*c-b*b)/(2*a*c);
+  const sinB=sqrt(max(1-cosB*cosB,0));
+  const A={x:c*cosB,y:c*sinB};
+  return{A,B,C};
+}
+
+// ============ ROBUST UNIVERSAL PARSER v3 ============
+
+function normalize(raw){
+  let t=raw;
+  t=t.replace(/<[^>]*>/g,' ');
+  t=t.replace(/&[a-z]+;/gi,m=>({'&amp;':'&','&lt;':'<','&gt;':'>','&nbsp;':' ','&mdash;':'—','&ndash;':'–','&deg;':'°'}[m.toLowerCase()]||' '));
+  t=t.replace(/&#(\d+);/g,(_,c)=>String.fromCharCode(+c));
+  t=t.replace(/[\u2010-\u2015\u2212]/g,'-');
+  t=t.replace(/[\u00A0\u2000-\u200B\u202F]/g,' ');
+  t=t.replace(/[«»\u201C\u201D\u201E\u2018\u2019]/g,'"');
+  t=t.replace(/\s+/g,' ').trim();
+  t=t.replace(/√|⎷|\\sqrt/g,'√');
+  t=t.replace(/градус[а-яёa-z0-9]*/gi,'°');
+  t=t.replace(/\bград\b\.?/gi,'°');
+  t=t.replace(/(\d)\s*(?:см|м)\b\.?/g,'$1');
+  return t;
+}
+
+function xnum(s){
+  if(!s)return null;s=String(s).trim();
+  let m=s.match(/^(\d+(?:[.,]\d+)?)\s*√\s*(\d+)$/);
+  if(m)return parseFloat(m[1].replace(',','.'))*sqrt(+m[2]);
+  m=s.match(/^√\s*(\d+)$/);if(m)return sqrt(+m[1]);
+  const n=parseFloat(s.replace(',','.'));return isNaN(n)?null:n;
+}
+
+// Extract first number from a piece of text
+function grabNum(s){
+  if(!s)return null;
+  const m=s.match(/(\d+(?:[.,]\d+)?)\s*√\s*(\d+)/);
+  if(m)return parseFloat(m[1].replace(',','.'))*sqrt(+m[2]);
+  const m2=s.match(/(\d+(?:[.,]\d+)?)/);
+  return m2?parseFloat(m2[1].replace(',','.')):null;
+}
+
+function detectFeatures(tl){
+  const F=new Set();
+  const S={tangent:['касательн'],secant:['секущ'],chord:['хорд'],circle:['окружност'],
+    radius:['радиус'],diameter:['диаметр'],triangle:['треугольник'],trapezoid:['трапеци'],
+    parallelogram:['параллелограмм'],rhombus:['ромб'],rectangle:['прямоугольник'],square:['квадрат'],
+    height:['высот'],median:['медиан'],bisector:['биссектрис'],diagonal:['диагонал'],
+    perpendicular:['перпендикуляр'],inscribed:['вписан'],circumscribed:['описан'],
+    isosceles:['равнобедренн'],equilateral:['равносторонн'],right:['прямоугольн'],
+    obtuse:['тупоугольн'],acute:['остроугольн'],arc_given:['дуг']};
+  for(const[f,stems]of Object.entries(S))if(stems.every(s=>tl.includes(s)))F.add(f);
+  // 'касается' → tangent ONLY if it's a real tangent line, not incircle touching side
+  if(tl.includes('касательн')) F.add('tangent'); // "касательная" noun = always tangent
+  if(tl.includes('касает')&&!F.has('tangent')){
+    // Is it an incircle just touching a side?
+    const isIncircleTouch = (tl.includes('вписан')&&tl.includes('окружност'))||
+                            /окружност\w*\s+вписан/.test(tl)||
+                            /вписан\w*\s+окружност/.test(tl)||
+                            /окружност\w*\s+касает\w*\s+сторон/.test(tl)||
+                            /касает\w*\s+сторон\w*\s+[a-z]{2}\s+в\s+точке/.test(tl)||
+                            /касает\w*\s+его\s+сторон/.test(tl);
+    // Is it a real tangent from external point or tangent line?
+    const isExplicitTangent = /проведен\w*\s+касательн/.test(tl)||
+                              /касательн\w*\s+[a-z]{2}/.test(tl)||
+                              /из\s+точки.*касательн/.test(tl)||
+                              /касает\w*\s+прямой/.test(tl)||
+                              /прямая\s+касает/.test(tl)||
+                              /[a-z]{2}\s+касает\w*\s+окружност/.test(tl)||
+                              /касает\w*\s+окружност\w*[^.]*в\s+точке/.test(tl);
+    if(!isIncircleTouch || isExplicitTangent) F.add('tangent');
+  }
+  if(F.has('radius')||F.has('diameter'))F.add('circle');
+  if(tl.includes('вписанн')&&/вписанн[а-яёa-z0-9]*[\s\S]{0,10}угл/.test(tl))F.add('inscribed_angle');
+  if(tl.includes('центральн')&&/центральн[а-яёa-z0-9]*[\s\S]{0,10}угл/.test(tl))F.add('central_angle');
+  if(tl.includes('вписан')&&tl.includes('окружност')&&!F.has('inscribed_angle'))F.add('incircle');
+  if(tl.includes('описан')&&tl.includes('окружност'))F.add('circumcircle');
+  if(tl.includes('средн')&&tl.includes('лини'))F.add('midline');
+  if(tl.includes('серединн')&&tl.includes('перпендикуляр'))F.add('perp_bisector');
+  if(tl.includes('параллельн'))F.add('parallel_lines');
+  if(/биссектрис[а-яёa-z0-9]*\s+угл[а-яёa-z0-9]*\s+[a-z]\s+и\s+[a-z]/i.test(tl))F.add('two_bisectors');
+  if(/пересекаются/.test(tl))F.add('intersect_at');
+  if(/центр[а-яёa-z0-9]*\s+на\s+сторон/.test(tl))F.add('center_on_side');
+  if(/проходит\s+через\s+вершин/.test(tl))F.add('passes_through');
+  if(/точк[а-яёa-z0-9]*\s+касания/.test(tl))F.add('tangent_point');
+  // Additional free-form detections
+  if(/площад/.test(tl))F.add('area');
+  if(/периметр/.test(tl))F.add('perimeter');
+  if(/прямо[йе]\s+угол|угол[а-яёa-z0-9]*\s+[а-яёa-z0-9]+\s+рав[а-яёa-z0-9]+\s+90|=\s*90/.test(tl))F.add('right');
+  if(/описан[а-яёa-z0-9]*\s+около|около\s+[а-яёa-z0-9]+\s+описан/.test(tl))F.add('circumcircle');
+  return[...F];
+}
+
+function parse(text){
+  const clean=normalize(text);
+  const tl=clean.toLowerCase();
+  const ctx={raw:clean,tl,segments:{},angles:{},features:[],
+    radiusVal:null,heightVal:null,distVal:null,scenario:null,
+    sides:{},diag1:null,diag2:null,perimeter:null,baseA:null,baseB:null};
+
+  // ===== 1. DETECT FEATURES FIRST (needed for vertex assignment) =====
+  ctx.features=detectFeatures(tl);
+  const F=ctx.features,has=f=>F.includes(f);
+
+  // ===== 2. AUTO-ASSIGN VERTICES if not explicitly given =====
+  let triV=null,quadV=null;
+  // Explicit vertices
+  {const m=clean.match(/треугольник[а-яёa-z0-9]*\s+([A-Z]{3})/i);if(m)triV=m[1].toUpperCase().split('');}
+  if(!triV){const m=clean.match(/\b([A-Z]{3})\b/);if(m&&has('triangle'))triV=m[1].split('');}
+  for(const p of['трапеци\[а-яёa-z0-9]*','параллелограмм\[а-яёa-z0-9]*','ромб\[а-яёa-z0-9]*','прямоугольник\[а-яёa-z0-9]*','квадрат\[а-яёa-z0-9]*']){
+    const m=clean.match(new RegExp(p+'\\s+([A-Z]{4})','i'));if(m){quadV=m[1].toUpperCase().split('');break;}}
+  if(!quadV){const m=clean.match(/\b([A-Z]{4})\b/);if(m&&(has('trapezoid')||has('parallelogram')||has('rhombus')||has('rectangle')||has('square')))quadV=m[1].split('');}
+  // Auto-assign defaults for figures without explicit labels
+  if(!triV)triV=['A','B','C'];
+  if(!quadV)quadV=['A','B','C','D'];
+  ctx.triVerts=triV;ctx.quadVerts=quadV;
+  const[vA,vB,vC]=triV;
+  const[qA,qB,qC,qD]=quadV;
+
+  // ===== 3. EXTRACT ANGLES (before segments) =====
+  // "угол C равен 90°" / "угол ABC = 150" / "угол C = 90"
+  for(const m of clean.matchAll(/угол\s+([A-Z]{1,3})\s*(?:рав[а-яёa-z0-9]+\s+|=\s*)(\d+(?:[.,]\d+)?)\s*°?/gi))
+    ctx.angles[m[1].toUpperCase()]=xnum(m[2]);
+  // "углы A и C равны 20° и 60°"
+  {const m=clean.match(/угл[а-яёa-z0-9]*\s+([A-Z]{1,3})\s+и\s+([A-Z]{1,3})\s+равн[а-яёa-z0-9]*\s+(?:соответственно\s+)?(\d+)\s*°?\s+и\s+(\d+)\s*°?/i);
+  if(m){ctx.angles[m[1].toUpperCase()]=+m[3];ctx.angles[m[2].toUpperCase()]=+m[4];}}
+  // "с углами 56 и 64 градуса/°" (without vertex labels → assign to B and C)
+  {const m=tl.match(/с\s+углами\s+(\d+)\s*°?\s+и\s+(\d+)\s*°?/);
+  if(m&&!Object.keys(ctx.angles).length){ctx.angles[vB]=+m[1];ctx.angles[vC]=+m[2];}}
+  // "угол между ними 60°" / "угол 60°" (single unlabeled angle → assign to first vertex)
+  {const m=tl.match(/угол\s+(?:между\s+[а-яёa-z0-9]+\s+)?(\d+)\s*°/);
+  if(m&&!Object.keys(ctx.angles).length){
+    const target=has('trapezoid')||has('parallelogram')||has('rhombus')?qA:vA;
+    ctx.angles[target]=+m[1];
+  }}
+  // "прямого угла B" / "прямой угол при B"  
+  {const m=clean.match(/прям[а-яёa-z0-9]+\s+угл[а-яёa-z0-9]*\s+(?:при\s+)?([A-Z])/i);
+  if(m)ctx.angles[m[1].toUpperCase()]=90;}
+  // "центральный угол AOB = 80°" / "вписанный угол ACB = 35°"
+  for(const m of clean.matchAll(/центральн[а-яёa-z0-9]*\s+угол\s+([A-Z]{2,3})\s*=?\s*(\d+)\s*°?/gi))
+    ctx.angles['central_'+m[1].toUpperCase()]=+m[2];
+  for(const m of clean.matchAll(/вписанн[а-яёa-z0-9]*\s+угол\s+([A-Z]{2,3})\s*=?\s*(\d+)\s*°?/gi))
+    ctx.angles['inscribed_'+m[1].toUpperCase()]=+m[2];
+  {const m=clean.match(/вписанн[а-яёa-z0-9]*\s+угл[а-яёa-z0-9]*\s+([A-Z]{3})\s+и\s+([A-Z]{3})/i);
+  if(m)ctx.twoInscribedAngles=[m[1].toUpperCase(),m[2].toUpperCase()];}
+
+  // ===== 4. EXTRACT SEGMENTS =====
+  // "AB = 5√13" / "AB = 12"
+  for(const m of clean.matchAll(/([A-Z]{2})\s*=\s*(\d+(?:[.,]\d+)?)\s*√\s*(\d+)/g))
+    ctx.segments[m[1]]=parseFloat(m[2].replace(',','.'))*sqrt(+m[3]);
+  for(const m of clean.matchAll(/([A-Z]{2})\s*=\s*(\d+(?:[.,]\d+)?)/g)){
+    if(m[1] in ctx.segments)continue;
+    const bef=clean.substring(max(0,m.index-40),m.index);
+    if(/угол\s+[A-Z]{0,2}$/i.test(bef))continue;
+    ctx.segments[m[1]]=xnum(m[2]);
+  }
+  // "AB равна 13" / "BC равно 14" / "BH равно 12"
+  for(const m of clean.matchAll(/([A-Z]{2})\s+(?:равн[аоыье]{0,4}|равен|равно)\s+(\d+(?:[.,]\d+)?(?:\s*√\s*\d+)?)/gi)){
+    const k=m[1].toUpperCase();if(k in ctx.segments)continue;
+    const bef=clean.substring(max(0,m.index-40),m.index);
+    if(/угол\s+[A-Z]{0,2}$/i.test(bef))continue;
+    const v=xnum(m[2]);if(v!==null)ctx.segments[k]=v;
+  }
+  // "сторона AB равна 13" / "сторону AB"
+  for(const m of clean.matchAll(/сторон[а-яёa-z0-9]*\s+([A-Z]{2})\s+(?:равн[а-яёa-z0-9]*\s+|=\s*)(\d+(?:[.,]\d+)?)/gi)){
+    const k=m[1].toUpperCase();if(!(k in ctx.segments))ctx.segments[k]=xnum(m[2]);}
+
+  // ===== 5. FREE-FORM NUMBERS (no vertex labels) =====
+  // "Стороны 6 и 10" / "стороны параллелограмма 6 и 10"
+  {const m=tl.match(/сторон[а-яёa-z0-9]*\s+(?:[а-яёa-z0-9]+\s+)?(\d+(?:[.,]\d+)?)\s+и\s+(\d+(?:[.,]\d+)?)/);
+  if(m){ctx.sides.a=xnum(m[1]);ctx.sides.b=xnum(m[2]);
+    // Assign to figure vertices
+    if(has('parallelogram')||has('rhombus')){
+      if(!(qA+qB in ctx.segments))ctx.segments[qA+qB]=ctx.sides.a;
+      if(!(qA+qD in ctx.segments))ctx.segments[qA+qD]=ctx.sides.b;
+    }else if(has('trapezoid')){
+      if(!(qA+qB in ctx.segments))ctx.segments[qA+qB]=ctx.sides.a;
+    }else if(has('triangle')){
+      if(!(vA+vB in ctx.segments))ctx.segments[vA+vB]=ctx.sides.a;
+      if(!(vB+vC in ctx.segments))ctx.segments[vB+vC]=ctx.sides.b;
+    }
+  }}
+  // "со стороной 8" (single side for rhombus/square)
+  {const m=tl.match(/(?:со\s+)?сторон[а-яёa-z0-9]*\s+(\d+(?:[.,]\d+)?)/);
+  if(m&&!ctx.sides.a){const v=xnum(m[1]);if(v){ctx.sides.a=v;
+    if(has('rhombus')&&!(qA+qB in ctx.segments))ctx.segments[qA+qB]=v;
+    if(has('square')&&!(qA+qB in ctx.segments))ctx.segments[qA+qB]=v;}}}
+  // "Основания 8 и 14" / "основания равны 8 и 18" / "основания трапеции 8 и 14"
+  {const m=tl.match(/основани[а-яёa-z0-9]*\s+(?:[а-яёa-z0-9]+\s+)?(?:равн[а-яёa-z0-9]*\s+)?(\d+(?:[.,]\d+)?)\s+и\s+(\d+(?:[.,]\d+)?)/);
+  if(m){ctx.baseA=xnum(m[1]);ctx.baseB=xnum(m[2]);
+    const big=max(ctx.baseA,ctx.baseB),small=min(ctx.baseA,ctx.baseB);
+    if(!(qA+qD in ctx.segments))ctx.segments[qA+qD]=big;
+    if(!(qB+qC in ctx.segments))ctx.segments[qB+qC]=small;
+  }}
+  // "основание AD = 10"
+  {const m=clean.match(/основани[а-яёa-z0-9]*\s+([A-Z]{2})\s*(?:=\s*|равн[а-яёa-z0-9]*\s+)(\d+(?:[.,]\d+)?)/i);
+  if(m&&!(m[1].toUpperCase() in ctx.segments))ctx.segments[m[1].toUpperCase()]=xnum(m[2]);}
+  // "основания AD = 10 и BC = 6"
+  {const m=clean.match(/основани[а-яёa-z0-9]*\s+([A-Z]{2})\s*(?:=\s*|равн[а-яёa-z0-9]*\s+)(\d+(?:[.,]\d+)?)\s+и\s+([A-Z]{2})\s*(?:=\s*|равн[а-яёa-z0-9]*\s+)(\d+(?:[.,]\d+)?)/i);
+  if(m){ctx.segments[m[1].toUpperCase()]=xnum(m[2]);ctx.segments[m[3].toUpperCase()]=xnum(m[4]);}}
+  // "Диагонали 12 и 16" / "диагонали равны 15 и 7" / "диагональ 27"
+  {const m=tl.match(/диагонал[а-яёa-z0-9]*\s+(?:[а-яёa-z0-9]+\s+)?(?:равн[а-яёa-z0-9]*\s+)?(\d+(?:[.,]\d+)?)\s+и\s+(\d+(?:[.,]\d+)?)/);
+  if(m){ctx.diag1=xnum(m[1]);ctx.diag2=xnum(m[2]);
+    if(!(qA+qC in ctx.segments))ctx.segments[qA+qC]=ctx.diag1;
+    if(!(qB+qD in ctx.segments))ctx.segments[qB+qD]=ctx.diag2;
+  }}
+  {const m=tl.match(/диагональ[а-яёa-z0-9]*\s+(?:[а-яёa-z0-9]+\s+)?(?:равн[а-яёa-z0-9]*\s+|=\s*)?(\d+(?:[.,]\d+)?)/);
+  if(m&&!ctx.diag1){ctx.diag1=xnum(m[1]);}}
+  // "одна из диагоналей равна 40" / "одна из диагоналей ромба равна 76"
+  {const m=tl.match(/одна\s+из\s+диагонал[а-яёa-z0-9]*\s+(?:[а-яёa-z0-9]+\s+)?(?:равн[а-яёa-z0-9]*\s+|=\s*)(\d+(?:[.,]\d+)?)/);
+  if(m)ctx.oneDiagVal=xnum(m[1]);}
+  // "Боковые стороны равны по 5" / "боковая сторона 5"
+  {const m=tl.match(/боков[а-яёa-z0-9]*\s+сторон[а-яёa-z0-9]*\s+(?:равн[а-яёa-z0-9]*\s+(?:по\s+)?)?(\d+(?:[.,]\d+)?)/);
+  if(m){const v=xnum(m[1]);if(v){
+    if(!(qA+qB in ctx.segments))ctx.segments[qA+qB]=v;
+    if(!(qC+qD in ctx.segments))ctx.segments[qC+qD]=v;}}}
+
+  // ===== 6. RADIUS / DIAMETER / HEIGHT / DISTANCE / PERIMETER =====
+  // Radius: "радиус 5" / "радиусом 5" / "радиуса 10" / "радиус окружности равен 5" / "R = 5"
+  for(const rx of[
+    /радиус[а-яёa-z0-9]*\s+(?:окружност[а-яёa-z0-9]+\s+)?(?:равн?[а-яёa-z0-9]*\s+|=\s*)(\d+(?:[.,]\d+)?)/i,
+    /радиусом\s+(\d+(?:[.,]\d+)?)/i,
+    /радиуса\s+(\d+(?:[.,]\d+)?)/i,
+    /радиус\s+(\d+(?:[.,]\d+)?)/i,
+  ]){const m=tl.match(rx);if(m){ctx.radiusVal=xnum(m[1]);break;}}
+  // Diameter: "диаметр равен 8" / "диаметром 8" / "диаметр 8"
+  for(const rx of[
+    /диаметр[а-яёa-z0-9]*\s+(?:окружност[а-яёa-z0-9]+\s+)?(?:равн?[а-яёa-z0-9]*\s+|=\s*)(\d+(?:[.,]\d+)?)/i,
+    /диаметром\s+(\d+(?:[.,]\d+)?)/i,
+    /диаметр\s+(\d+(?:[.,]\d+)?)/i,
+  ]){const m=tl.match(rx);if(m){ctx.diameterVal=xnum(m[1]);if(!ctx.radiusVal)ctx.radiusVal=ctx.diameterVal/2;break;}}
+  // Height: "высота 19" / "высота равна 8" / "высота трапеции равна 19" / "BH = 12"
+  {const m=tl.match(/высот[а-яёa-z0-9]*\s+(?:трапеци[а-яёa-z0-9]*\s+)?(?:равн[а-яёa-z0-9]*\s+|=\s*)(\d+(?:[.,]\d+)?)/);if(m)ctx.heightVal=xnum(m[1]);}
+  {const m=tl.match(/высот[а-яёa-z0-9]*\s+(\d+(?:[.,]\d+)?)/);if(m&&!ctx.heightVal)ctx.heightVal=xnum(m[1]);}
+  // Distance: "расстояние ... 13" / "удалённой ... 13"
+  {const m=tl.match(/(?:удал[её]нн[а-яёa-z0-9]+|расстояни[а-яёa-z0-9]+)[^.]*?(\d+(?:[.,]\d+)?)/);if(m)ctx.distVal=xnum(m[1]);}
+  // Perimeter: "периметр 56" / "периметр равен 56"
+  {const m=tl.match(/периметр[а-яёa-z0-9]*\s+(?:[а-яёa-z0-9]+\s+)?(?:равн?[а-яёa-z0-9]*\s+|=\s*)?(\d+(?:[.,]\d+)?)/);if(m)ctx.perimeter=xnum(m[1]);}
+  // Midline value: "средняя линия 16" / "средняя линия KM равна 16"
+  {const m=clean.match(/средн[а-яёa-z0-9]*\s+лини[а-яёa-z0-9]*\s+(?:([A-Z]{2})\s+)?(?:[а-яёa-z0-9]+\s+)?(?:равн[а-яёa-z0-9]*\s+|=\s*)?(\d+(?:[.,]\d+)?)/i);
+  if(m)ctx.midlineVal=xnum(m[2]);}
+  {const m=tl.match(/средн[а-яёa-z0-9]*\s+лини[а-яёa-z0-9]*\s+(\d+(?:[.,]\d+)?)/);if(m&&!ctx.midlineVal)ctx.midlineVal=xnum(m[1]);}
+
+  // ===== 7. STRUCTURAL RELATIONS =====
+  {const m=clean.match(/([A-Z]{2})\s*[-\u2014\u2013]\s*диаметр/i);if(m)ctx.diameterSeg=m[1].toUpperCase();}
+  {const m=clean.match(/центр[а-яёa-z0-9]*\s+на\s+сторон[а-яёa-z0-9]*\s+([A-Z]{2})/i);if(m)ctx.centerOnSide=m[1].toUpperCase();}
+  {const m=clean.match(/проходит\s+через\s+вершин[а-яёa-z0-9]*\s+([A-Z])/i);if(m)ctx.passesThroughVertex=m[1].toUpperCase();}
+  {const m=clean.match(/касается\s+(?:прямой\s+|стороны\s+)?([A-Z]{2})(?:\s+в\s+точке\s+([A-Z]))?/i);
+  if(m){ctx.tangentToLine=m[1].toUpperCase();if(m[2])ctx.tangentAtPoint=m[2].toUpperCase();if(!has('tangent'))ctx.features.push('tangent');}}
+  {const m=clean.match(/дуг[а-яёa-z0-9]*\s+([A-Z]{2})\s+(?:[а-яёa-z0-9]+\s+)*?(?:равн[а-яёa-z0-9]*\s+|=\s*)(\d+)\s*°?/i);
+  if(m)ctx.arcDeg={seg:m[1].toUpperCase(),value:+m[2]};}
+  if(/диагонал[а-яёa-z0-9]*\s+перпендикуляр/i.test(tl))ctx.diagPerp=true;
+  {const m=tl.match(/расстояни[а-яёa-z0-9]*\s+от\s+точк[а-яёa-z0-9]*\s+пересечени[а-яёa-z0-9]*\s+диагонал[а-яёa-z0-9]*[^.]*?до[^.]*?сторон[^.]*?(?:равн[а-яёa-z0-9]*\s+|=\s*)(\d+(?:[.,]\d+)?)/);
+  if(m)ctx.diagToSideDist=xnum(m[1]);}
+  {const m=tl.match(/расстояни[а-яёa-z0-9]*\s+от[^.]*?точк[а-яёa-z0-9]*\s+[a-z][^.]*?до\s+сторон[а-яёa-z0-9]*\s+[a-z]{2}[^.]*?(?:равн[а-яёa-z0-9]*\s+|=\s*)(\d+(?:[.,]\d+)?)/i);
+  if(m&&!ctx.diagToSideDist)ctx.distToSide=xnum(m[1]);}
+  {const m=clean.match(/биссектрис[а-яёa-z0-9]*\s+угл[а-яёa-z0-9]*\s+([A-Z])\s+и\s+([A-Z])/i);
+  if(m)ctx.twoBisectorVertices=[m[1].toUpperCase(),m[2].toUpperCase()];}
+  {const m=clean.match(/пересекаются\s+в\s+точке\s+([A-Z])/i);if(m)ctx.intersectionPt=m[1].toUpperCase();}
+  {const m=clean.match(/пересекаются\s+в\s+точке[^.]*?на\s+сторон[а-яёa-z0-9]*\s+([A-Z]{2})/i);if(m)ctx.bisOnSide=m[1].toUpperCase();}
+  if(!ctx.bisOnSide){const m=clean.match(/на\s+сторон[а-яёa-z0-9]*\s+([A-Z]{2})/i);if(m)ctx.bisOnSide=m[1].toUpperCase();}
+  {const m=clean.match(/перпендикуляр[а-яёa-z0-9]*\s+медиан[а-яёa-z0-9]*\s+([A-Z]{2})/i);if(m)ctx.perpToMedian=m[1].toUpperCase();}
+  {const m=clean.match(/делит\s+угол\s+([A-Z]{3})\s+пополам/i);if(m)ctx.bisectsAngle=m[1].toUpperCase();}
+  {const m=clean.match(/боков[а-яёa-z0-9]*\s+стороны\s+([A-Z]{2})\s+и\s+([A-Z]{2})\s+равн/i);if(m)ctx.equalSides=[m[1].toUpperCase(),m[2].toUpperCase()];}
+  if(ctx.oneDiagVal==null){const m=tl.match(/одна\s+из\s+диагонал[а-яёa-z0-9]*\s+(?:[а-яёa-z0-9]+\s+)?(?:равн[а-яёa-z0-9]*\s+|=\s*)(\d+(?:[.,]\d+)?)/);if(m)ctx.oneDiagVal=xnum(m[1]);}
+  if(/вдвое\s+больше/i.test(tl))ctx.doubleRatio=true;
+  {const m=clean.match(/точк[а-яёa-z0-9]*\s+([A-Z](?:\s*,\s*[A-Z])*)\s+леж[а-яёa-z0-9]+\s+на\s+окружност/i);if(m)ctx.circlePoints=m[1].replace(/\s/g,'').split(',');}
+  {const m=clean.match(/биссектрис[а-яёa-z0-9]*\s+(?:из\s+вершины\s+|угла\s+)([A-Z])[^.]*?пересекает[^.]*?сторон[а-яёa-z0-9]*\s+([A-Z]{2})[^.]*?точк[а-яёa-z0-9]*\s+([A-Z])/i);
+  if(m){ctx.bisVertex=m[1].toUpperCase();ctx.bisHitSide=m[2].toUpperCase();ctx.bisHitPt=m[3].toUpperCase();}}
+  // Also: "биссектриса из вершины A параллелограмма ABCD пересекает сторону BC"
+  if(!ctx.bisVertex){const m=clean.match(/биссектрис[а-яёa-z0-9]*\s+(?:из\s+)?(?:вершины\s+)?([A-Z])\s+[а-яёa-z0-9]+\s+[A-Z]{4}[^.]*?пересекает\s+сторон[а-яёa-z0-9]*\s+([A-Z]{2})/i);
+  if(m){ctx.bisVertex=m[1].toUpperCase();ctx.bisHitSide=m[2].toUpperCase();}}
+  {const m=clean.match(/(?:([A-Z]{2})\s*[-\u2014\u2013]\s*высот|высот[а-яёa-z0-9]*\s+([A-Z]{2}))/i);if(m)ctx.heightSeg=(m[1]||m[2]).toUpperCase();}
+  if(ctx.segments.DH&&ctx.segments.CH)ctx.heightDivides={from:'A',foot:'H',dh:ctx.segments.DH,ch:ctx.segments.CH};
+  // "Боковые стороны равны по 5" for trapezoid
+  {const m=tl.match(/боков[а-яёa-z0-9]*\s+сторон[а-яёa-z0-9]*\s+(?:([A-Z]{2})\s+и\s+([A-Z]{2})\s+)?равн/i);
+  if(m&&m[1])ctx.equalSides=[m[1].toUpperCase(),m[2].toUpperCase()];}
+
+  // ===== 8. SCENARIO CLASSIFICATION =====
+  if(has('circle')){
+    // --- Triangle + circle combinations first (highest priority) ---
+    if(has('center_on_side')&&has('triangle'))ctx.scenario='circle_on_side_tangent';
+    else if(has('triangle')&&has('tangent')&&has('passes_through'))ctx.scenario='circle_on_side_tangent';
+    else if(has('triangle')&&has('diameter')&&has('height'))ctx.scenario='right_tri_height_circle';
+    else if(has('triangle')&&(has('circumscribed')||has('circumcircle')))ctx.scenario='tri_circumscribed';
+    else if(has('triangle')&&has('incircle'))ctx.scenario='tri_incircle';
+    else if(has('triangle')&&has('inscribed')&&!has('inscribed_angle'))ctx.scenario='tri_inscribed_in_circle';
+    // --- Auto-detect from angles ---
+    // If we have any angle marked as "central_*" → central angle problem
+    else if(has('central_angle')&&has('inscribed_angle'))ctx.scenario='central_and_inscribed';
+    else if(has('central_angle'))ctx.scenario='central_angle';
+    else if(has('inscribed_angle')&&ctx.twoInscribedAngles)ctx.scenario='two_inscribed_angles';
+    else if(has('inscribed_angle')&&has('tangent'))ctx.scenario='inscribed_angle_tangent';
+    else if(has('inscribed_angle')&&has('diameter'))ctx.scenario='inscribed_angle_diameter';
+    else if(has('inscribed_angle'))ctx.scenario='inscribed_angle';
+    // --- Auto-detect from segments/distances ---
+    // Tangent + secant from same external point
+    else if(has('tangent')&&has('secant'))ctx.scenario='tangent_secant';
+    // Two tangents from point
+    else if(has('tangent')&&(ctx.distVal||/две\s+касательн/i.test(tl)))ctx.scenario='two_tangents';
+    // Single tangent to circle — no secant, no triangle
+    else if(has('tangent')&&!has('triangle')&&!has('incircle')&&!has('secant'))ctx.scenario='tangent_only';
+    // Tangent with secant (fallback)
+    else if(has('tangent')&&!has('triangle')&&!has('incircle'))ctx.scenario='tangent_secant';
+    // Chord problems
+    else if(has('chord')&&has('perpendicular'))ctx.scenario='chord_perp_radius';
+    else if(has('chord'))ctx.scenario='chord_distance';
+    // Diameter (Thales)
+    else if(has('diameter')&&!has('triangle'))ctx.scenario='diameter_angle';
+    // Tangent + arc
+    else if(has('tangent')&&has('arc_given'))ctx.scenario='tangent_angle_arc';
+    // --- Auto-detect from parsed data ---
+    // If we found an angle > 0 with a 3-letter label containing O → central angle
+    else{ let foundCentral=false,foundInscribed=false;
+      for(const k of Object.keys(ctx.angles)){
+        if(k.startsWith('central_'))foundCentral=true;
+        if(k.startsWith('inscribed_'))foundInscribed=true;
+      }
+      if(foundCentral&&foundInscribed) ctx.scenario='central_and_inscribed';
+      else if(foundCentral) ctx.scenario='central_angle';
+      else if(foundInscribed) ctx.scenario='inscribed_angle';
+      // Fallback: triangle+circle → circumscribed
+      else if(has('triangle')) ctx.scenario='tri_circumscribed';
+      else ctx.scenario='circle_only';
+    }
+  }
+  if(!ctx.scenario){
+    if(has('perp_bisector'))ctx.scenario='perp_bisector';
+    else if(has('parallel_lines')&&has('intersect_at'))ctx.scenario='parallel_segments';
+    else if(has('triangle')&&ctx.perpToMedian)ctx.scenario='tri_perp_median';
+    else if(has('triangle'))ctx.scenario='triangle';
+    else if(has('trapezoid')&&ctx.diagPerp)ctx.scenario='trapezoid_perp_diag';
+    else if(has('trapezoid'))ctx.scenario='trapezoid';
+    else if(has('parallelogram')&&has('two_bisectors'))ctx.scenario='pgram_bisectors';
+    else if(has('parallelogram'))ctx.scenario='parallelogram';
+    else if(has('rhombus')&&ctx.diagToSideDist)ctx.scenario='rhombus_diag_dist';
+    else if(has('rhombus'))ctx.scenario='rhombus';
+    else if(has('rectangle'))ctx.scenario='rectangle';
+    else if(has('square'))ctx.scenario='square';
+    else ctx.scenario='triangle';
+  }
+
+  // ===== 9. COMPAT PROPS + AUTO-TYPE DETECTION =====
+  // Auto-detect 'right' from angles (even without "прямоугольный" in text)
+  for(const v of Object.values(ctx.angles)){
+    if(Math.abs(v-90)<0.5 && !has('right')){ ctx.features.push('right'); break; }
+  }
+  // Auto-detect 'obtuse' from angles > 90°
+  for(const v of Object.values(ctx.angles)){
+    if(v>90 && !has('obtuse')){ ctx.features.push('obtuse'); break; }
+  }
+  ctx.triProps={};
+  if(has('isosceles')&&has('triangle'))ctx.triProps.isosceles=true;
+  if(has('equilateral'))ctx.triProps.equilateral=true;
+  if(has('right')&&!has('trapezoid'))ctx.triProps.right=true;
+  if(has('obtuse'))ctx.triProps.obtuse=true;
+  if(has('acute'))ctx.triProps.acute=true;
+  ctx.quadProps={};
+  if(has('isosceles')&&has('trapezoid'))ctx.quadProps.isosceles=true;
+  if(has('right')&&has('trapezoid'))ctx.quadProps.right=true;
+  return ctx;
+}
+
+// ============ UNIVERSAL SOLVER ============
+function solve(ctx){
+  const s={points:{},circles:[],lines:[],dashed:[],rightAngles:[],arcMarks:[],equalMarks:[],dims:[],angleMarks:[]};
+  const P=(x,y,l)=>{const p={x,y,label:l};if(l)s.points[l]=p;return p;};
+  const segs=ctx.segments, R=ctx.radiusVal, F=ctx.features;
+  const has=f=>F.includes(f);
+
+  const S=ctx.scenario;
+
+  // ===================== TRIANGLE (universal) =====================
+  if(S==='triangle'||S==='tri_circumscribed'||S==='tri_incircle'||S==='tri_inscribed_in_circle'){
+    const [vA,vB,vC]=ctx.triVerts;
+    let isEq=has('equilateral'), isIso=has('isosceles');
+    let isRight=has('right');
+
+    // --- Get side lengths ---
+    let sBC=segs[vB+vC]||segs[vC+vB];
+    let sAC=segs[vA+vC]||segs[vC+vA];
+    let sAB=segs[vA+vB]||segs[vB+vA];
+
+    // ===== AUTO-DETECT triangle type from angles =====
+    let rightV=null;
+    // 1) Any angle = 90 → right triangle, that vertex is rightV
+    for(const[lbl,val]of Object.entries(ctx.angles)){
+      if(Math.abs(val-90)<0.5 && ctx.triVerts.includes(lbl)){ rightV=lbl; isRight=true; break; }
+    }
+    // 2) "прямого угла X" / "прямой угол при X" / "прямого угла при вершине X"
+    if(!rightV && isRight){
+      for(const rx of[
+        /прям\w+\s+угл\w*\s+(?:при\s+(?:вершине?\s+)?)?([A-Z])/i,
+        /прям\w+\s+угл\w*\s+([A-Z])/i,
+        /угол\s+([A-Z])\s+(?:=\s*|рав\w+\s+)90/i,
+      ]){
+        const rm=ctx.raw.match(rx);
+        if(rm && ctx.triVerts.includes(rm[1].toUpperCase())){ rightV=rm[1].toUpperCase(); break; }
+      }
+    }
+    // 3) "прямоугольный треугольник XYZ, угол Y = 90" — Y is rightV
+    if(!rightV && isRight){
+      for(const[lbl]of Object.entries(ctx.angles)){
+        if(ctx.triVerts.includes(lbl)){ rightV=lbl; break; }
+      }
+    }
+    // 4) Default: if right but still no vertex identified → last vertex
+    if(isRight && !rightV) rightV=vC;
+
+    // ===== AUTO-DETECT from sides =====
+    // Equal sides → isosceles/equilateral
+    if(sAB && sAC && sBC){
+      if(Math.abs(sAB-sAC)<0.01 && Math.abs(sAC-sBC)<0.01) isEq=true;
+      else if(Math.abs(sAB-sAC)<0.01 || Math.abs(sAB-sBC)<0.01 || Math.abs(sAC-sBC)<0.01) isIso=true;
+      // Pythagorean check → right triangle
+      const sides=[sAB,sAC,sBC].sort((a,b)=>a-b);
+      if(!isRight && Math.abs(sides[0]*sides[0]+sides[1]*sides[1]-sides[2]*sides[2])<0.5){
+        isRight=true;
+        // Find which vertex is opposite the hypotenuse
+        if(Math.abs(sides[2]-sBC)<0.01) rightV=vA; // BC is hypotenuse → right at A
+        else if(Math.abs(sides[2]-sAC)<0.01) rightV=vB;
+        else rightV=vC;
+      }
+    }
+
+    // If inscribed in circle, compute from R
+    if(S==='tri_inscribed_in_circle'&&R){
+      if(isEq){
+        const side=R*sqrt(3);
+        sBC=sAC=sAB=side;
+      } else if(isIso){
+        if(!sBC)sBC=R*1.4;
+        const half=min(sBC/2,R*.99);
+        const yb=-sqrt(max(R*R-half*half,0));
+        // Compute AB from coordinates
+        sAB=sAC=hypot(half,R-yb);
+      }
+    }
+
+    // If right triangle with 2 sides, compute 3rd
+    if(rightV||isRight){
+      if(!rightV)rightV=vC;
+      const otherVerts=ctx.triVerts.filter(v=>v!==rightV);
+      const hyp=segs[otherVerts[0]+otherVerts[1]]||segs[otherVerts[1]+otherVerts[0]];
+      const leg1=segs[rightV+otherVerts[0]]||segs[otherVerts[0]+rightV];
+      const leg2=segs[rightV+otherVerts[1]]||segs[otherVerts[1]+rightV];
+      if(leg1&&leg2&&!hyp){ segs[otherVerts[0]+otherVerts[1]]=sqrt(leg1*leg1+leg2*leg2); }
+      if(leg1&&hyp&&!leg2){ segs[rightV+otherVerts[1]]=sqrt(hyp*hyp-leg1*leg1); }
+      if(leg2&&hyp&&!leg1){ segs[rightV+otherVerts[0]]=sqrt(hyp*hyp-leg2*leg2); }
+      sBC=segs[vB+vC]||segs[vC+vB]; sAC=segs[vA+vC]||segs[vC+vA]; sAB=segs[vA+vB]||segs[vB+vA];
+    }
+
+    // Fill in defaults — SMART: use angles and right angle info
+    if(isEq){if(!sBC)sBC=10;sAC=sAB=sBC;}
+    else if(isRight&&rightV&&!sBC&&!sAC&&!sAB){
+      // No sides given for right triangle → build directly from rightV
+      const otherV=ctx.triVerts.filter(v=>v!==rightV);
+      let leg1=6,leg2=8;
+      for(const v of otherV){
+        const a=ctx.angles[v];
+        if(a&&a!==90){
+          const rad=d2r(a);
+          leg1=10*Math.tan(rad)>0.5?10*sin(rad)/cos(rad>PI/4?PI/2-rad:rad):6;
+          leg2=10*cos(rad)>0.5?10*cos(rad>PI/4?PI/2-rad:rad):8;
+          const sc=8/max(leg1,leg2);leg1*=sc;leg2*=sc;
+          break;
+        }
+      }
+      const pR=P(0,0,rightV);
+      const pV1=P(leg1,0,otherV[0]);
+      const pV2=P(0,leg2,otherV[1]);
+      s.lines.push([pV1,pV2],[pV2,pR],[pR,pV1]);
+      s.rightAngles.push({v:pR,d1:pV1,d2:pV2});
+      addExtra(ctx,s,{[rightV]:pR,[otherV[0]]:pV1,[otherV[1]]:pV2},vA,vB,vC,
+        dist(s.points[vA],s.points[vB]),dist(s.points[vB],s.points[vC]),dist(s.points[vA],s.points[vC]));
+      if(S==='tri_circumscribed'){
+        const cc=circumcenter(s.points[vA],s.points[vB],s.points[vC]);
+        const O=P(cc.x,cc.y,'O');
+        s.circles.push({center:O,radius:cc.r});
+        s.dashed.push([O,s.points[vA]],[O,s.points[vB]],[O,s.points[vC]]);
+      }
+      for(const seg in segs){const[l1,l2]=seg.split('');
+        if(s.points[l1]&&s.points[l2]&&ctx.triVerts.includes(l1)&&ctx.triVerts.includes(l2))
+          s.dims.push({p1:s.points[l1],p2:s.points[l2],text:fmtNum(segs[seg])});}
+      return s;
+    }
+    else if(Object.keys(ctx.angles).length>=1&&!sBC&&!sAC&&!sAB){
+      // Build from angles (no sides given) — use law of sines
+      let angA=ctx.angles[vA],angB=ctx.angles[vB],angC=ctx.angles[vC];
+      // Compute missing angles from sum = 180°
+      if(angA&&angB&&!angC)angC=180-angA-angB;
+      else if(angA&&angC&&!angB)angB=180-angA-angC;
+      else if(angB&&angC&&!angA)angA=180-angB-angC;
+      else if(angA&&!angB&&!angC){ const rem=180-angA; angB=rem/2; angC=rem/2; }
+      else if(angB&&!angA&&!angC){ const rem=180-angB; angA=rem/2; angC=rem/2; }
+      else if(angC&&!angA&&!angB){ const rem=180-angC; angA=rem/2; angB=rem/2; }
+      else { if(!angA)angA=60;if(!angB)angB=60;angC=180-angA-angB; }
+      // Safety clamp
+      if(angA<=0)angA=10;if(angB<=0)angB=10;if(angC<=0)angC=10;
+      const a=10;
+      const b=a*sin(d2r(angB))/sin(d2r(angA));
+      const c=a*sin(d2r(angC))/sin(d2r(angA));
+      sBC=a; sAC=abs(b); sAB=abs(c);
+      if(angA===90){isRight=true;rightV=vA;}
+      if(angB===90){isRight=true;rightV=vB;}
+      if(angC===90){isRight=true;rightV=vC;}
+    }
+    // ===== OBTUSE: if marked obtuse but no angles at all → default obtuse shape =====
+    else if(has('obtuse')&&!sBC&&!sAC&&!sAB&&Object.keys(ctx.angles).length===0){
+      // Find which vertex is obtuse (from text or default to first vertex)
+      let obtuseV=vA;
+      // Try to find from text: "тупой угол при B" / "тупоугольный ... угол B"
+      const om=ctx.raw.match(/(?:тупо[йе]\s+угол\s+(?:при\s+)?|угол\s+)([A-Z])/i);
+      if(om&&ctx.triVerts.includes(om[1].toUpperCase())) obtuseV=om[1].toUpperCase();
+      // Default obtuse angle = 120°
+      ctx.angles[obtuseV]=120;
+      const otherV=ctx.triVerts.filter(v=>v!==obtuseV);
+      ctx.angles[otherV[0]]=30; ctx.angles[otherV[1]]=30;
+      const a=10;
+      const angA_=ctx.angles[vA]||60,angB_=ctx.angles[vB]||60,angC_=ctx.angles[vC]||60;
+      sBC=a;
+      sAC=a*sin(d2r(angB_))/sin(d2r(angA_));
+      sAB=a*sin(d2r(angC_))/sin(d2r(angA_));
+    }
+    if(!sBC)sBC=8;if(!sAC)sAC=7;if(!sAB)sAB=6;
+
+    // Build triangle
+    let tri;
+    if(S==='tri_inscribed_in_circle'&&R&&isIso){
+      // Special layout: center at origin, A on top
+      const half=min(sBC/2,R*.99);
+      const yb=-sqrt(max(R*R-half*half,0));
+      const A=P(0,R,vA), B=P(-half,yb,vB), C=P(half,yb,vC);
+      const O=P(0,0,'O');
+      s.circles.push({center:O,radius:R});
+      s.lines.push([A,B],[B,C],[C,A]);
+      s.equalMarks.push([[A,B],[A,C]]);
+      // Height AH
+      if(has('height')||/высот/.test(ctx.tl)){
+        const H=P(0,yb,'H');
+        s.dashed.push([A,H]);
+        s.rightAngles.push({v:H,d1:A,d2:C});
+      }
+      if(sBC)s.dims.push({p1:B,p2:C,text:fmtNum(sBC)});
+      addExtra(ctx,s,{[vA]:A,[vB]:B,[vC]:C},vA,vB,vC,sAB,sBC,sAC);
+      return s;
+    }
+    if(S==='tri_inscribed_in_circle'&&R&&isEq){
+      const O=P(0,0,'O');
+      const A=P(0,R,vA),B=P(R*cos(d2r(210)),R*sin(d2r(210)),vB),C=P(R*cos(d2r(330)),R*sin(d2r(330)),vC);
+      s.circles.push({center:O,radius:R});
+      s.lines.push([A,B],[B,C],[C,A]);
+      s.equalMarks.push([[A,B],[B,C],[C,A]]);
+      return s;
+    }
+
+    tri=triFromSides(sBC,sAC,sAB);
+    // Map: B at tri.B, C at tri.C, A at tri.A
+    const tA=P(tri.A.x,tri.A.y,vA);
+    const tB=P(tri.B.x,tri.B.y,vB);
+    const tC=P(tri.C.x,tri.C.y,vC);
+    s.lines.push([tA,tB],[tB,tC],[tC,tA]);
+
+    // Right angle mark
+    if(rightV&&s.points[rightV]){
+      const rv=s.points[rightV];
+      const others=ctx.triVerts.filter(v=>v!==rightV);
+      if(s.points[others[0]]&&s.points[others[1]])
+        s.rightAngles.push({v:rv,d1:s.points[others[0]],d2:s.points[others[1]]});
+    }
+    // Detect obtuse vertex (any angle > 90° in computed triangle)
+    let obtuseV=null;
+    {// Compute actual angles from coordinates
+      const pts3=[tA,tB,tC],lbl3=[vA,vB,vC];
+      for(let i=0;i<3;i++){
+        const p=pts3[i],p1=pts3[(i+1)%3],p2=pts3[(i+2)%3];
+        const ax=p1.x-p.x,ay=p1.y-p.y,bx=p2.x-p.x,by=p2.y-p.y;
+        const cosA=(ax*bx+ay*by)/(hypot(ax,ay)*hypot(bx,by)+eps);
+        const ang=r2d(Math.acos(max(-1,min(1,cosA))));
+        if(ang>90.5) obtuseV=lbl3[i];
+        // If angle was explicitly given, use that for mark
+        if(ctx.angles[lbl3[i]]&&ctx.angles[lbl3[i]]>90) obtuseV=lbl3[i];
+      }
+    }
+    // Angle marks for all explicitly given angles
+    for(const[lbl,val]of Object.entries(ctx.angles)){
+      if(val===90)continue;
+      if(!ctx.triVerts.includes(lbl))continue;
+      const vp=s.points[lbl];if(!vp)continue;
+      const others=ctx.triVerts.filter(v=>v!==lbl);
+      const p1=s.points[others[0]],p2=s.points[others[1]];
+      if(p1&&p2) s.angleMarks.push({v:vp,d1:p1,d2:p2,label:val+'°'});
+    }
+    // If obtuse but no explicit angle shown → add obtuse arc mark without label
+    if(obtuseV&&!ctx.angles[obtuseV]&&has('obtuse')){
+      const vp=s.points[obtuseV],others=ctx.triVerts.filter(v=>v!==obtuseV);
+      const p1=s.points[others[0]],p2=s.points[others[1]];
+      if(vp&&p1&&p2) s.angleMarks.push({v:vp,d1:p1,d2:p2,label:''});
+    }
+    if(isEq) s.equalMarks.push([[tA,tB],[tB,tC],[tC,tA]]);
+    if(isIso&&!isEq) s.equalMarks.push([[tA,tB],[tA,tC]]);
+
+    // Add extras: heights, medians, bisectors, circumscribed circle, incircle
+    addExtra(ctx,s,{[vA]:tA,[vB]:tB,[vC]:tC},vA,vB,vC,sAB,sBC,sAC);
+
+    // Circumscribed circle
+    if(S==='tri_circumscribed'){
+      const cc=circumcenter(tA,tB,tC);
+      const O=P(cc.x,cc.y,'O');
+      s.circles.push({center:O,radius:cc.r});
+      s.dashed.push([O,tA],[O,tB],[O,tC]);
+    }
+    // Incircle
+    if(S==='tri_incircle'){
+      const ic=incenter(tA,tB,tC);
+      const I=P(ic.x,ic.y,'I');
+      s.circles.push({center:I,radius:ic.r});
+      // Tangent point on BC
+      const a=dist(tB,tC),b=dist(tA,tC),c=dist(tA,tB),sp=(a+b+c)/2;
+      const tBC=sp-b; // distance from B to tangent point on BC
+      const D_=P(tB.x+(tC.x-tB.x)*tBC/a, tB.y+(tC.y-tB.y)*tBC/a, 'D');
+      s.dashed.push([I,D_]);
+      s.rightAngles.push({v:D_,d1:I,d2:tC});
+    }
+    // Inscribed in circle
+    if(S==='tri_inscribed_in_circle'&&R){
+      const cc=circumcenter(tA,tB,tC);
+      const O=P(cc.x,cc.y,'O');
+      s.circles.push({center:O,radius:cc.r});
+    }
+
+    // Dimension labels for given sides
+    for(const seg in segs){
+      const l1=seg[0],l2=seg[1];
+      if(s.points[l1]&&s.points[l2]&&ctx.triVerts.includes(l1)&&ctx.triVerts.includes(l2)){
+        s.dims.push({p1:s.points[l1],p2:s.points[l2],text:fmtNum(segs[seg])});
+      }
+    }
+
+    return s;
+  }
+
+  // ===================== CIRCLE SCENARIOS =====================
+  // ===================== TANGENT ONLY (no secant) =====================
+  if(S==='tangent_only'){
+    let r=R||5;
+    let AB=segs.AB||segs.BA;
+    let AO=segs.AO||segs.OA;
+    if(!AO&&AB) AO=sqrt(AB*AB+r*r);
+    if(!AO) AO=r*2;
+    if(!AB) AB=sqrt(max(AO*AO-r*r,0));
+    const O=P(0,0,'O'), A=P(AO,0,'A');
+    const bx=r*r/AO, by=r*sqrt(max(AO*AO-r*r,0))/AO;
+    const B=P(bx,by,'B');
+    s.circles.push({center:O,radius:r});
+    s.lines.push([A,B]); // tangent line from A to B
+    s.dashed.push([O,B]); // radius to tangent point
+    s.rightAngles.push({v:B,d1:O,d2:A}); // OB ⊥ AB
+    if(segs.AB||segs.BA)s.dims.push({p1:A,p2:B,text:fmtNum(segs.AB||segs.BA)});
+    if(segs.AO||segs.OA)s.dims.push({p1:A,p2:O,text:fmtNum(segs.AO||segs.OA)});
+    return s;
+  }
+
+  if(S==='tangent_secant'){
+    let AB=segs.AB||segs.BA, AO=segs.AO||segs.OA;
+    let r=R;
+    if(!r&&AB&&AO)r=sqrt(AO*AO-AB*AB);
+    if(!r)r=5;
+    if(!AO&&AB)AO=sqrt(AB*AB+r*r);
+    if(!AO)AO=r*2.6;
+    if(!AB)AB=sqrt(max(AO*AO-r*r,0));
+
+    const O=P(0,0,'O'),A=P(AO,0,'A');
+    const bx=r*r/AO,by=r*sqrt(max(AO*AO-r*r,0))/AO;
+    const B=P(bx,by,'B');
+    s.circles.push({center:O,radius:r});
+    s.lines.push([A,B]);
+    // secant through O
+    const secEnd=P(-r*1.15,0,'');
+    s.lines.push([A,secEnd]);
+    s.dashed.push([O,B]);
+    s.rightAngles.push({v:B,d1:O,d2:A});
+    if(segs.AB||segs.BA)s.dims.push({p1:A,p2:B,text:fmtNum(segs.AB||segs.BA)});
+    if(segs.AO||segs.OA)s.dims.push({p1:A,p2:O,text:fmtNum(segs.AO||segs.OA)});
+    return s;
+  }
+
+  if(S==='two_tangents'){
+    const r=R||5;
+    let d=ctx.distVal;
+    const AB=segs.AB||segs.BA;
+    if(!d&&AB)d=sqrt(AB*AB+r*r);
+    if(!d)d=r*2.6;
+    const O=P(0,0,'O'),A=P(d,0,'A');
+    const bx=r*r/d,by=sqrt(max(r*r-bx*bx,0));
+    const B=P(bx,by,'B'),C=P(bx,-by,'C');
+    s.circles.push({center:O,radius:r});
+    s.lines.push([A,B],[A,C]);
+    s.dashed.push([O,B],[O,C],[O,A]);
+    s.rightAngles.push({v:B,d1:O,d2:A},{v:C,d1:O,d2:A});
+    s.equalMarks.push([[A,B],[A,C]]);
+    return s;
+  }
+
+  if(S==='chord_perp_radius'){
+    const r=R||5;
+    const BD=segs.BD||segs.DB||1;
+    const OD=r-BD;
+    const hc=sqrt(max(r*r-OD*OD,0));
+    const O=P(0,0,'O'),B=P(r,0,'B'),Dp=P(OD,0,'D');
+    const Ap=P(OD,hc,'A'),Cp=P(OD,-hc,'C');
+    s.circles.push({center:O,radius:r});
+    s.lines.push([O,B],[Ap,Cp]);
+    s.rightAngles.push({v:Dp,d1:B,d2:Ap});
+    s.dims.push({p1:B,p2:Dp,text:fmtNum(BD)});
+    s.equalMarks.push([[Dp,Ap],[Dp,Cp]]);
+    return s;
+  }
+
+  if(S==='chord_distance'){
+    const r=R||10;
+    let chLen=null,chSeg=null;
+    for(const seg in segs){chLen=segs[seg];chSeg=seg;break;}
+    if(!chLen)chLen=r*1.6;
+    const hc=chLen/2,d=sqrt(max(r*r-hc*hc,0));
+    const O=P(0,0,'O');
+    const Ap=P(-hc,-d,chSeg?chSeg[0]:'A'),Bp=P(hc,-d,chSeg?chSeg[1]:'B'),H=P(0,-d,'H');
+    s.circles.push({center:O,radius:r});
+    s.lines.push([Ap,Bp]);
+    s.dashed.push([O,H]);
+    s.rightAngles.push({v:H,d1:O,d2:Bp});
+    s.dims.push({p1:Ap,p2:Bp,text:fmtNum(chLen)});
+    return s;
+  }
+
+  // ===================== CENTRAL ANGLE =====================
+  if(S==='central_angle'){
+    const r=R||6;
+    const O=P(0,0,'O');
+    // Find the central angle value
+    let centralDeg=90;
+    for(const[k,v]of Object.entries(ctx.angles)){
+      if(k.startsWith('central_')){centralDeg=v;break;}
+      if(k.length===3&&k[1]==='O'){centralDeg=v;break;} // AOB
+    }
+    // If generic angle AOB
+    for(const[k,v]of Object.entries(ctx.angles)){
+      if(k.length===3){centralDeg=v;break;}
+    }
+    const halfC=d2r(centralDeg/2);
+    // Place A and B symmetrically
+    const baseAngle=d2r(90); // point up
+    const Ap=P(r*cos(baseAngle+halfC),r*sin(baseAngle+halfC),'A');
+    const Bp=P(r*cos(baseAngle-halfC),r*sin(baseAngle-halfC),'B');
+    s.circles.push({center:O,radius:r});
+    s.lines.push([O,Ap],[O,Bp]); // radii
+    // Arc AB (highlighted)
+    s.highlightArcs=s.highlightArcs||[];
+    s.highlightArcs.push({center:O,radius:r,p1:Ap,p2:Bp,minor:true});
+    // Angle mark at O
+    s.angleMarks.push({v:O,d1:Ap,d2:Bp,label:centralDeg+'°'});
+    s.equalMarks.push([[O,Ap],[O,Bp]]);
+    return s;
+  }
+
+  // ===================== INSCRIBED ANGLE (general) =====================
+  if(S==='inscribed_angle'){
+    const r=R||6;
+    const O=P(0,0,'O');
+    
+    // Find inscribed angle value
+    let insDeg=null;
+    for(const[k,v]of Object.entries(ctx.angles)){
+      if(k.startsWith('inscribed_')){insDeg=v;break;}
+    }
+    // Fallback: any 3-letter angle
+    if(!insDeg){
+      for(const[k,v]of Object.entries(ctx.angles)){
+        if(k.length===3&&k[1]!=='O'){insDeg=v;break;}
+      }
+    }
+    // Special case: chord = radius → inscribed angle = 30°
+    const chordEqualsR=/хорд[а-яёa-z0-9]*\s+[A-Z]{2}\s*,?\s*равн[а-яёa-z0-9]*\s+радиус|равн[а-яёa-z0-9]*\s+радиус[а-яёa-z0-9]*\s+окружност/i.test(ctx.raw);
+    if(chordEqualsR) insDeg=30;
+    if(!insDeg) insDeg=35; // default
+
+    const centralDeg=insDeg*2; // theorem: inscribed = central/2
+    const halfC=d2r(centralDeg/2);
+    const baseAngle=d2r(250); // chord at bottom
+    const Ap=P(r*cos(baseAngle+halfC),r*sin(baseAngle+halfC),'A');
+    const Bp=P(r*cos(baseAngle-halfC),r*sin(baseAngle-halfC),'B');
+    // Inscribed angle vertex C on the MAJOR arc (opposite side)
+    const Cp=P(r*cos(d2r(90)),r*sin(d2r(90)),'C');
+    
+    s.circles.push({center:O,radius:r});
+    s.lines.push([Ap,Bp]); // chord
+    s.lines.push([Cp,Ap],[Cp,Bp]); // inscribed angle sides
+    s.dashed.push([O,Ap],[O,Bp]); // radii
+    // Arc mark at C (inscribed angle)
+    s.arcMarks.push({vertex:Cp,p1:Ap,p2:Bp,label:insDeg+'°'});
+    // Highlight minor arc
+    s.highlightArcs=s.highlightArcs||[];
+    s.highlightArcs.push({center:O,radius:r,p1:Ap,p2:Bp,minor:true});
+    // Central angle at O (show dashed)
+    s.angleMarks.push({v:O,d1:Ap,d2:Bp,label:centralDeg+'°'});
+    
+    if(chordEqualsR) s.equalMarks.push([[O,Ap],[O,Bp],[Ap,Bp]]);
+    return s;
+  }
+
+  // ===================== CENTRAL + INSCRIBED on same arc =====================
+  if(S==='central_and_inscribed'){
+    const r=R||5;
+    const O=P(0,0,'O');
+    let centralDeg=80;
+    for(const[k,v]of Object.entries(ctx.angles)){
+      if(k.startsWith('central_')){centralDeg=v;break;}
+      if(k.length===3&&k[1]==='O'){centralDeg=v;break;}
+    }
+    for(const[k,v]of Object.entries(ctx.angles)){
+      if(k.length===3){centralDeg=v;break;}
+    }
+    const insDeg=centralDeg/2;
+    const halfC=d2r(centralDeg/2);
+    const baseAngle=d2r(270);
+    const Ap=P(r*cos(baseAngle+halfC),r*sin(baseAngle+halfC),'A');
+    const Bp=P(r*cos(baseAngle-halfC),r*sin(baseAngle-halfC),'B');
+    const Cp=P(r*cos(d2r(90+15)),r*sin(d2r(90+15)),'C'); // on major arc, slightly off-center
+    
+    s.circles.push({center:O,radius:r});
+    s.lines.push([O,Ap],[O,Bp]); // central angle sides (radii)
+    s.lines.push([Cp,Ap],[Cp,Bp]); // inscribed angle sides
+    s.dashed.push([O,Cp]); // radius to C
+    // Central angle mark
+    s.angleMarks.push({v:O,d1:Ap,d2:Bp,label:centralDeg+'°'});
+    // Inscribed angle mark
+    s.arcMarks.push({vertex:Cp,p1:Ap,p2:Bp,label:insDeg+'°'});
+    // Highlight arc
+    s.highlightArcs=s.highlightArcs||[];
+    s.highlightArcs.push({center:O,radius:r,p1:Ap,p2:Bp,minor:true});
+    s.equalMarks.push([[O,Ap],[O,Bp]]);
+    return s;
+  }
+
+  // ===================== INSCRIBED ANGLE ON DIAMETER = 90° =====================
+  if(S==='inscribed_angle_diameter'||S==='diameter_angle'){
+    const r=R||7;
+    const O=P(0,0,'O');
+    const dSeg=ctx.diameterSeg||'AB';
+    const Ap=P(-r,0,dSeg[0]);
+    const Bp=P(r,0,dSeg[1]);
+    // C on circle — inscribed angle on diameter = 90° (Thales' theorem)
+    const cAngle=d2r(65); // position on circle
+    const Cp=P(r*cos(cAngle),r*sin(cAngle),'C');
+    s.circles.push({center:O,radius:r});
+    s.lines.push([Ap,Bp]); // diameter
+    s.lines.push([Cp,Ap],[Cp,Bp]); // inscribed angle
+    s.dashed.push([O,Cp]); // radius to C
+    s.rightAngles.push({v:Cp,d1:Ap,d2:Bp}); // 90° at C (Thales)
+    // Label "90°"
+    s.arcMarks.push({vertex:Cp,p1:Ap,p2:Bp,label:'90°'});
+    return s;
+  }
+
+  // ===================== INSCRIBED ANGLE + TANGENT =====================
+  if(S==='inscribed_angle_tangent'){
+    const r=R||5;
+    const O=P(0,0,'O');
+    let insDeg=50;
+    for(const[k,v]of Object.entries(ctx.angles)){
+      if(k.startsWith('inscribed_')){insDeg=v;break;}
+      if(k.length===3){insDeg=v;break;}
+    }
+    // B is the tangent point (on circle), tangent line at B
+    const Bp=P(r,0,'B');
+    // A and C on circle, inscribed angle ABC = insDeg
+    // The arc AC (not containing B) = 2*insDeg (inscribed angle theorem)
+    const arcAC=d2r(insDeg*2);
+    // Place A and C symmetrically relative to B's position
+    const bAngle=0; // B is at angle 0
+    const Ap=P(r*cos(bAngle+d2r(insDeg*2+30)),r*sin(bAngle+d2r(insDeg*2+30)),'A');
+    const Cp=P(r*cos(bAngle+d2r(30)),r*sin(bAngle+d2r(30)),'C');
+    
+    s.circles.push({center:O,radius:r});
+    s.lines.push([Bp,Ap],[Bp,Cp]); // sides of inscribed angle
+    s.lines.push([Ap,Cp]); // chord AC
+    // Tangent at B (perpendicular to OB)
+    const tangLen=r*1.3;
+    const T1=P(r,tangLen,''), T2=P(r,-tangLen,'');
+    s.lines.push([T1,T2]); // tangent line
+    s.dashed.push([O,Bp]); // radius to tangent point
+    s.rightAngles.push({v:Bp,d1:O,d2:T1}); // tangent ⊥ radius
+    s.arcMarks.push({vertex:Bp,p1:Ap,p2:Cp,label:insDeg+'°'});
+    return s;
+  }
+
+  // ===================== TWO INSCRIBED ANGLES ON SAME ARC =====================
+  if(S==='two_inscribed_angles'){
+    const r=R||6;
+    const O=P(0,0,'O');
+    let insDeg=40;
+    for(const[k,v]of Object.entries(ctx.angles)){
+      if(k.startsWith('inscribed_')){insDeg=v;break;}
+      if(k.length===3){insDeg=v;break;}
+    }
+    const centralDeg=insDeg*2;
+    const halfC=d2r(centralDeg/2);
+    const baseAngle=d2r(270);
+    const Ap=P(r*cos(baseAngle+halfC),r*sin(baseAngle+halfC),'A');
+    const Bp=P(r*cos(baseAngle-halfC),r*sin(baseAngle-halfC),'B');
+    // Two vertices on the major arc
+    const Cp=P(r*cos(d2r(80)),r*sin(d2r(80)),'C');
+    const Dp=P(r*cos(d2r(120)),r*sin(d2r(120)),'D');
+    
+    s.circles.push({center:O,radius:r});
+    s.lines.push([Ap,Bp]); // chord
+    s.lines.push([Cp,Ap],[Cp,Bp]); // angle ACB
+    s.lines.push([Dp,Ap],[Dp,Bp]); // angle ADB
+    s.dashed.push([O,Ap],[O,Bp]);
+    // Both inscribed angles are equal (same arc)
+    s.arcMarks.push({vertex:Cp,p1:Ap,p2:Bp,label:insDeg+'°'});
+    s.arcMarks.push({vertex:Dp,p1:Ap,p2:Bp,label:insDeg+'°'});
+    s.highlightArcs=s.highlightArcs||[];
+    s.highlightArcs.push({center:O,radius:r,p1:Ap,p2:Bp,minor:true});
+    return s;
+  }
+
+  // ===================== CIRCLE ON SIDE OF TRIANGLE, TANGENT =====================
+  // "Окружность с центром на стороне AC △ABC проходит через C и касается AB в B"
+  // Center O on AC, OC=R (passes through C), OB=R and OB⊥AB (tangent at B)
+  // → right △AOB: AO² = AB² + OB² → AO = √(AB²+R²), AC = AO + OC
+  if(S==='circle_on_side_tangent'){
+    const r=R||4;
+    const segs_=ctx.segments;
+    const cosLine=ctx.centerOnSide||'AC'; // the side center lies on
+    const passV=ctx.passesThroughVertex; // vertex circle passes through (e.g. C)
+    const tangLine=ctx.tangentToLine||'AB'; // line circle is tangent to
+    const tangPt=ctx.tangentAtPoint||tangLine[1]; // point of tangency (e.g. B)
+    
+    // Get known lengths
+    let AB_len=segs_[tangLine]||segs_[tangLine[1]+tangLine[0]];
+    if(!AB_len){
+      // Try all segment combos
+      for(const seg in segs_){
+        const s1=seg[0],s2=seg[1];
+        if((s1===tangLine[0]&&s2===tangLine[1])||(s1===tangLine[1]&&s2===tangLine[0])){
+          AB_len=segs_[seg]; break;
+        }
+      }
+    }
+    if(!AB_len) AB_len=3;
+
+    // Compute: AO = √(AB²+R²), AC = AO + R (center between A and passV)
+    const AO=sqrt(AB_len*AB_len+r*r);
+    const AC_len=AO+r;
+
+    // Build geometry: A at origin, B along some direction, C along another
+    // Place A at origin. We need △ABC with the circle.
+    // Key triangle: right △AOB with right angle at B
+    // O is on line AC, at distance AO from A
+    // B is at distance AB from A, and OB⊥AB
+
+    // Place A at origin, AC along positive x-axis
+    const pA=P(0,0,'A');
+    const pC=P(AC_len,0,'C');
+    const pO=P(AO,0,'O'); // center on AC
+
+    // B: AB⊥OB, |AB|=AB_len, |OB|=R
+    // B is NOT on line AC. OB⊥AB means angle ABO=90°
+    // Actually: tangent at B means OB⊥AB (the LINE AB, not just segment)
+    // So from O, drop perpendicular of length R to line AB → that foot is B
+    // Distance from A to B along line AB = AB_len
+    // Triangle AOB: right angle at B, AO=hyp, AB=leg, OB=leg
+    // B is at (0, AB_len)? No — let me think in coordinates.
+    // A=(0,0), O=(AO,0). B such that |AB|=AB_len and OB⊥AB.
+    // Direction AB: let angle = θ from positive x.
+    // B = (AB_len·cosθ, AB_len·sinθ)
+    // OB = B - O = (AB_len·cosθ - AO, AB_len·sinθ)
+    // AB direction = (cosθ, sinθ)
+    // OB · AB = 0: (AB_len·cosθ - AO)·cosθ + AB_len·sin²θ = 0
+    // AB_len·cos²θ - AO·cosθ + AB_len·sin²θ = 0
+    // AB_len - AO·cosθ = 0
+    // cosθ = AB_len / AO
+    const cosTheta=AB_len/AO;
+    const sinTheta=sqrt(max(1-cosTheta*cosTheta,0));
+    const bx=AB_len*cosTheta, by=AB_len*sinTheta;
+    const pB=P(bx,by,'B');
+
+    s.circles.push({center:pO,radius:r});
+    s.lines.push([pA,pB],[pB,pC],[pC,pA]); // triangle
+    s.dashed.push([pO,pB]); // radius to tangent point
+    s.rightAngles.push({v:pB,d1:pA,d2:pO}); // OB⊥AB
+
+    // Dimension labels
+    if(segs_[tangLine]||segs_[tangLine[1]+tangLine[0]])
+      s.dims.push({p1:pA,p2:pB,text:fmtNum(AB_len)});
+    // Show diameter or radius
+    s.dims.push({p1:pO,p2:pC,text:'R='+fmtNum(r)});
+
+    // Equal marks: OB = OC = R
+    s.equalMarks.push([[pO,pB],[pO,pC]]);
+
+    return s;
+  }
+
+  // ===================== TANGENT LINE + ARC ANGLE =====================
+  // CA tangent at A, O center, arc AD = 130° → angle ACO = (arc-180°+90°) etc.
+  if(S==='tangent_angle_arc'){
+    const r=R||6;
+    const O=P(0,0,'O');
+    const arcDeg=ctx.arcDeg?ctx.arcDeg.value:130;
+    // A on circle, CA tangent → OA⊥CA. Arc AD = arcDeg.
+    // Place A at angle 0 on circle
+    const Ap=P(r,0,'A');
+    // D at angle arcDeg from A (going counterclockwise)
+    const Dp=P(r*cos(d2r(arcDeg)),r*sin(d2r(arcDeg)),'D');
+    // C is external, on tangent at A (tangent = vertical line x=r)
+    // Angle ACO: A on circle, C external, O center
+    // OA⊥tangent, so C is along tangent direction from A
+    const anglACO=(arcDeg-90)/2; // by tangent-chord angle theorem
+    const cDist=r*2;
+    // C below A on tangent (perpendicular to OA)
+    const Cp=P(r, -cDist, 'C');
+    s.circles.push({center:O,radius:r});
+    s.lines.push([Cp,Ap],[Cp,O]); // sides of angle ACO
+    s.dashed.push([O,Ap],[O,Dp]); // radii
+    s.lines.push([Ap,Dp]); // chord AD
+    // tangent line through A
+    const tExt=P(r,r*1.2,'');
+    s.dashed.push([Cp,tExt]);
+    s.rightAngles.push({v:Ap,d1:O,d2:Cp});
+    s.arcMarks.push({vertex:Cp,p1:Ap,p2:O,label:''});
+    s.highlightArcs=s.highlightArcs||[];
+    s.highlightArcs.push({center:O,radius:r,p1:Ap,p2:Dp,minor:arcDeg<=180});
+    s.dims.push({p1:Ap,p2:Dp,text:'⌢'+arcDeg+'°'});
+    return s;
+  }
+
+  // ===================== RIGHT △ + CIRCLE ON HEIGHT =====================
+  // Right △ABC, B=90°, BH altitude. Circle with diameter BH intersects AB at P, CB at K.
+  if(S==='right_tri_height_circle'){
+    const BH_len=ctx.segments.BH||ctx.segments.HB||12;
+    // Construct right triangle with B at top
+    // Use default proportions: angle A≈37°, so BC/AC≈0.6/0.8
+    const AC=BH_len*2.5; // reasonable size
+    const AB_=AC*0.8, BC_=AC*0.6;
+    const pA=P(0,0,'A'), pC=P(AC,0,'C');
+    // B above AC
+    const bx=AB_*AB_/AC, by=AB_*BC_/AC;
+    const pB=P(bx,by,'B');
+    // H = foot of perpendicular from B to AC
+    const pH=P(bx,0,'H');
+    // Circle with diameter BH: center = midpoint of BH, radius = BH/2
+    const oX=(bx+bx)/2, oY=by/2;
+    const pO=P(bx,by/2,'O');
+    const circR=by/2;
+    // P on AB: circle intersects AB. Since angle BPH = 90° (angle in semicircle)
+    // P = foot of perp from H to AB
+    const fpAB=footPerp({x:bx,y:0},pA,pB);
+    const pP=P(fpAB.x,fpAB.y,'P');
+    // K on CB: angle BKH = 90° → K = foot of perp from H to CB
+    const fpCB=footPerp({x:bx,y:0},pC,pB);
+    const pK=P(fpCB.x,fpCB.y,'K');
+    
+    s.lines.push([pA,pB],[pB,pC],[pC,pA]); // triangle
+    s.dashed.push([pB,pH]); // height BH
+    s.circles.push({center:pO,radius:circR});
+    s.lines.push([pP,pK]); // PK
+    s.rightAngles.push({v:pB,d1:pA,d2:pC});
+    s.rightAngles.push({v:pH,d1:pB,d2:pC});
+    s.dims.push({p1:pB,p2:pH,text:fmtNum(BH_len)});
+    return s;
+  }
+
+  if(S==='circle_only'){
+    const r=R||5;
+    P(0,0,'O');
+    s.circles.push({center:s.points.O,radius:r});
+    return s;
+  }
+
+
+  // ===================== PARALLEL SEGMENTS INTERSECTION =====================
+  if(S==='parallel_segments'){
+    const segs_=ctx.segments;
+    let AB_=segs_.AB||segs_.BA||14,DC=segs_.DC||segs_.CD||42,AC_=segs_.AC||segs_.CA||52;
+    const gap=15;
+    const pA=P(0,gap,'A'),pB=P(AB_,gap,'B');
+    const pD=P(-DC*0.15,0,'D'),pC=P(pD.x+DC,0,'C');
+    const pM_=lineIntersect(pA,{x:pC.x,y:pC.y},pB,{x:pD.x,y:pD.y});
+    if(pM_)P(pM_.x,pM_.y,'M');
+    s.lines.push([pA,pB],[pD,pC],[pA,pC],[pB,pD]);
+    s.dims.push({p1:pA,p2:pB,text:fmtNum(AB_)},{p1:pD,p2:pC,text:fmtNum(DC)},{p1:pA,p2:pC,text:fmtNum(AC_)});
+    return s;
+  }
+
+
+  // ===================== TRIANGLE: PERP TO MEDIAN BISECTS ANGLE =====================
+  if(S==='tri_perp_median'){
+    const[vA,vB,vC]=ctx.triVerts;
+    let ac=segs[vA+vC]||segs[vC+vA]||4;
+    const ab=ac,bc=ab*1.2;
+    const tri=triFromSides(bc,ac,ab);
+    const tA=P(tri.A.x,tri.A.y,vA),tB=P(tri.B.x,tri.B.y,vB),tC=P(tri.C.x,tri.C.y,vC);
+    s.lines.push([tA,tB],[tB,tC],[tC,tA]);
+    const pM=P((tA.x+tC.x)/2,(tA.y+tC.y)/2,'M');
+    s.dashed.push([tB,pM]);
+    const dA_=dist(tA,tB),dC_=dist(tA,tC),t_=dA_/(dA_+dC_);
+    const pD=P(tB.x+(tC.x-tB.x)*t_,tB.y+(tC.y-tB.y)*t_,'D');
+    s.dashed.push([tA,pD]);
+    const I=lineIntersect(tA,pD,tB,pM);
+    if(I){s.rightAngles.push({v:P(I.x,I.y,''),d1:tA,d2:tB});}
+    s.dims.push({p1:tA,p2:tC,text:fmtNum(ac)});
+    s.equalMarks.push([[tA,tB],[tA,tC]]);
+    return s;
+  }
+
+  // ===================== QUADRILATERALS (comprehensive) =====================
+  
+  // Helper: bisector direction at vertex idx of quadrilateral
+  function quadBisDir(idx,pts4,labels4){
+    const vp=pts4[idx],prev=pts4[(idx+3)%4],next=pts4[(idx+1)%4];
+    const a1=atan2(prev.y-vp.y,prev.x-vp.x);
+    const a2=atan2(next.y-vp.y,next.x-vp.x);
+    let d=a2-a1;while(d<-PI)d+=2*PI;while(d>PI)d-=2*PI;
+    const bisA=a1+d/2;
+    return{x:cos(bisA),y:sin(bisA),vp};
+  }
+
+  if(S==='trapezoid'||S==='trapezoid_perp_diag'){
+    const[A,B,C,D]=ctx.quadVerts;
+    let ad=segs[A+D]||segs[D+A]||ctx.baseB||null, bc=segs[B+C]||segs[C+B]||ctx.baseA||null;
+    let ab=segs[A+B]||segs[B+A], cd=segs[C+D]||segs[D+C];
+    let h=ctx.heightVal;
+    const isR=has('right'), isIso=has('isosceles');
+    const hasDiag=has('diagonal');
+    const hasMidline=/средн/i.test(ctx.tl)&&/лини/i.test(ctx.tl);
+    const hasHt=ctx.heightSeg||/высот/i.test(ctx.tl);
+    const hasMidDiagSeg=/середин[а-яёa-z0-9]*\s+диагонал/i.test(ctx.tl);
+    let perim=ctx.perimeter;
+    let trapAngles={};
+    for(const[lbl,val]of Object.entries(ctx.angles)) trapAngles[lbl]=val;
+    let bisSide=null,bisF=null;
+    {const bm=ctx.raw.match(/биссектрис[а-яёa-z0-9]*\s+угл[а-яёa-z0-9]*\s+([A-Z])\s+и\s+([A-Z]).*?пересекаются\s+в\s+точке\s+([A-Z])/i);
+    if(bm){bisSide=[bm[1].toUpperCase(),bm[2].toUpperCase()];bisF=bm[3].toUpperCase();}}
+    let af=segs.AF||segs.FA, bf=segs.BF||segs.FB;
+
+    // Auto-assign bases from free-form
+    if(!ad&&ctx.baseB){const big=max(ctx.baseA||0,ctx.baseB||0),small=min(ctx.baseA||0,ctx.baseB||0);ad=big;bc=small;}
+    if(!ad)ad=14;if(!bc)bc=8;
+    if(ad<bc){const tmp=ad;ad=bc;bc=tmp;} // AD always bigger
+
+    // Height computation
+    if(!h){
+      if(ab&&isIso)h=sqrt(max(ab*ab-((ad-bc)/2)**2,0));
+      else if(ctx.diagPerp)h=(ad+bc)/2;
+      else if(Object.keys(trapAngles).length>0){
+        const ang=Object.values(trapAngles)[0];
+        if(ab)h=ab*sin(d2r(ang));
+        else h=max((ad-bc)/2*Math.tan(d2r(min(ang,180-ang))),3);
+      }
+      else h=max(ad,bc)*0.55;
+    }
+    if(!ab&&perim)ab=(perim-ad-bc)/2;
+    if(!ab&&cd)ab=cd; // isosceles
+    if(!ab)ab=sqrt(h*h+((ad-bc)/2)**2);
+    if(!cd)cd=isIso?ab:sqrt(h*h+((ad-bc)/2)**2);
+
+    // Build: A bottom-left, D bottom-right, B top-left, C top-right
+    const off=isR?0:(ad-bc)/2;
+    const pa=P(0,0,A),pd=P(ad,0,D),pb=P(off,h,B),pc=P(off+bc,h,C);
+    s.lines.push([pa,pb],[pb,pc],[pc,pd],[pd,pa]);
+
+    // Properties
+    if(isR)s.rightAngles.push({v:pa,d1:pd,d2:pb},{v:pb,d1:pa,d2:pc});
+    if(isIso)s.equalMarks.push([[pa,pb],[pc,pd]]);
+
+    // Height line
+    if(hasHt||ctx.heightSeg){
+      const hm=ctx.raw.match(/высот[а-яёa-z0-9]*\s+([A-Z])([A-Z])/i)||ctx.raw.match(/([A-Z])([A-Z])\s*[-—–]\s*высот/i);
+      const fromL=hm?hm[1].toUpperCase():C, footL=hm?hm[2].toUpperCase():'H';
+      const from=s.points[fromL];
+      if(from){
+        const foot=P(from.x,0,footL);
+        s.dashed.push([from,foot]);
+        s.rightAngles.push({v:foot,d1:from,d2:pd});
+      }
+    }
+    // Midline
+    if(hasMidline||ctx.midlineVal){
+      const mAB=mid(pa,pb),mCD=mid(pc,pd);
+      const pK=P(mAB.x,mAB.y,'K'),pM=P(mCD.x,mCD.y,'M');
+      s.dashed.push([pK,pM]);
+      s.dims.push({p1:pK,p2:pM,text:'ср.л.='+fmtNum(ctx.midlineVal||(ad+bc)/2)});
+    }
+    // Midpoint-of-diagonals segment
+    if(hasMidDiagSeg){
+      s.dashed.push([pa,pc],[pb,pd]);
+      const mAC=mid(pa,pc),mBD=mid(pb,pd);
+      s.lines.push([P(mAC.x,mAC.y,''),P(mBD.x,mBD.y,'')]);
+      s.dims.push({p1:{x:mAC.x,y:mAC.y},p2:{x:mBD.x,y:mBD.y},text:fmtNum(abs(ad-bc)/2)});
+    }
+    // Diagonals
+    if(hasDiag||ctx.diagPerp){
+      s.dashed.push([pa,pc],[pb,pd]);
+      const M=lineIntersect(pa,pc,pb,pd);
+      if(M){P(M.x,M.y,'M');if(ctx.diagPerp)s.rightAngles.push({v:s.points.M,d1:pa,d2:pb});}
+    }
+    // Bisectors
+    if(bisSide&&bisF){
+      const pts4=[s.points[A],s.points[B],s.points[C],s.points[D]];
+      const labs=[A,B,C,D];
+      const i1=labs.indexOf(bisSide[0]),i2=labs.indexOf(bisSide[1]);
+      if(i1>=0&&i2>=0){
+        const b1=quadBisDir(i1,pts4,labs),b2=quadBisDir(i2,pts4,labs);
+        const e1={x:b1.vp.x+b1.x*500,y:b1.vp.y+b1.y*500};
+        const e2={x:b2.vp.x+b2.x*500,y:b2.vp.y+b2.y*500};
+        const Fp=lineIntersect(b1.vp,e1,b2.vp,e2);
+        if(Fp){const pF=P(Fp.x,Fp.y,bisF);s.dashed.push([b1.vp,pF],[b2.vp,pF]);
+          if(af)s.dims.push({p1:b1.vp,p2:pF,text:bisSide[0]+'F='+fmtNum(af)});
+          if(bf)s.dims.push({p1:pF,p2:b2.vp,text:bisSide[1]+'F='+fmtNum(bf)});}
+      }
+    }
+    // Angles
+    for(const[lbl,val]of Object.entries(trapAngles)){
+      if(lbl.length===3){const v=lbl[1];if(s.points[v]&&s.points[lbl[0]]&&s.points[lbl[2]])s.angleMarks.push({v:s.points[v],d1:s.points[lbl[0]],d2:s.points[lbl[2]],label:val+'°'});}
+      else if(lbl.length===1&&s.points[lbl]){const vi=[A,B,C,D].indexOf(lbl);if(vi>=0){const prev=[A,B,C,D][(vi+3)%4],next=[A,B,C,D][(vi+1)%4];if(s.points[prev]&&s.points[next])s.angleMarks.push({v:s.points[lbl],d1:s.points[prev],d2:s.points[next],label:val+'°'});}}
+    }
+    // Dimensions
+    for(const seg in segs){const[l1,l2]=seg.split('');if(s.points[l1]&&s.points[l2])s.dims.push({p1:s.points[l1],p2:s.points[l2],text:fmtNum(segs[seg])});}
+    if(!segs[A+D]&&!segs[D+A])s.dims.push({p1:pa,p2:pd,text:fmtNum(ad)});
+    if(!segs[B+C]&&!segs[C+B])s.dims.push({p1:pb,p2:pc,text:fmtNum(bc)});
+    addQuadExtra(ctx,s,[A,B,C,D]);
+    return s;
+  }
+
+  if(S==='parallelogram'||S==='pgram_bisectors'){
+    const[A,B,C,D]=ctx.quadVerts;
+    let a=10,b=7,angle=70; // a=AD=BC, b=AB=CD
+    for(const seg in segs){
+      if([A+D,D+A,B+C,C+B].includes(seg))a=segs[seg];
+      else if([A+B,B+A,C+D,D+C].includes(seg))b=segs[seg];
+    }
+    for(const[l,v]of Object.entries(ctx.angles)){if(v!==90)angle=v;break;}
+    const hasBis=/биссектрис/i.test(ctx.tl), hasDiag=has('diagonal');
+    
+    // Two bisectors meeting on side
+    let twoBisV=ctx.twoBisectorVertices;
+    let bisOnSide=ctx.bisOnSide||null;
+    if(S==='pgram_bisectors'&&!twoBisV){twoBisV=[A,D];bisOnSide=B+C;}
+    // For bisectors of A and D on BC → a = 2*b
+    if(twoBisV&&bisOnSide&&!segs[A+D]&&!segs[D+A]&&!segs[B+C]&&!segs[C+B]) a=2*b;
+    if(angle===70&&hasBis) angle=60;
+    
+    const r=d2r(angle);
+    const pa=P(0,0,A),pb=P(b*cos(r),b*sin(r),B),pd=P(a,0,D),pc=P(a+b*cos(r),b*sin(r),C);
+    s.lines.push([pa,pb],[pb,pc],[pc,pd],[pd,pa]);
+    
+    // Equal opposite sides marks
+    s.equalMarks.push([[pa,pb],[pc,pd]]);  // AB = CD
+    if(abs(a-b)>0.1) s.equalMarks.push([[pb,pc],[pd,pa]]); // BC = AD (2nd set of ticks)
+    
+    // Angle marks: show given angle + supplementary
+    if(Object.keys(ctx.angles).length){
+      s.angleMarks.push({v:pa,d1:pd,d2:pb,label:angle+'°'});
+      // Opposite angle is equal
+      s.angleMarks.push({v:pc,d1:pb,d2:pd,label:angle+'°'});
+    }
+    
+    // Diagonals
+    if(hasDiag){
+      s.dashed.push([pa,pc],[pb,pd]);
+      const O=lineIntersect(pa,pc,pb,pd);
+      if(O){P(O.x,O.y,ctx.intersectionPt||'O');
+        // Diagonals bisect each other → mark equal halves
+        const pO=s.points[ctx.intersectionPt||'O'];
+        if(pO)s.equalMarks.push([[pa,pO],[pO,pc]],[[pb,pO],[pO,pd]]);
+      }
+    }
+    
+    // Single bisector: "биссектриса угла A пересекает сторону BC в точке E"
+    if(ctx.bisVertex){
+      const vidx=[A,B,C,D].indexOf(ctx.bisVertex);
+      if(vidx>=0){
+        const pts4=[s.points[A],s.points[B],s.points[C],s.points[D]];
+        const bd=quadBisDir(vidx,pts4,[A,B,C,D]);
+        const bEnd={x:bd.vp.x+bd.x*500,y:bd.vp.y+bd.y*500};
+        const side=ctx.bisHitSide||B+C;
+        const sA_=s.points[side[0]],sB_=s.points[side[1]];
+        if(sA_&&sB_){
+          const E=lineIntersect(bd.vp,bEnd,sA_,sB_);
+          if(E){P(E.x,E.y,ctx.bisHitPt||'E');s.dashed.push([bd.vp,s.points[ctx.bisHitPt||'E']]);}
+        }
+      }
+    }
+    
+    // Two bisectors on side
+    if(twoBisV&&bisOnSide){
+      const sA_=s.points[bisOnSide[0]],sB_=s.points[bisOnSide[1]];
+      if(sA_&&sB_){
+        const pts4=[s.points[A],s.points[B],s.points[C],s.points[D]];
+        let meetPt=null;
+        for(const vl of twoBisV){
+          const vidx=[A,B,C,D].indexOf(vl);if(vidx<0)continue;
+          const bd=quadBisDir(vidx,pts4,[A,B,C,D]);
+          const bEnd={x:bd.vp.x+bd.x*500,y:bd.vp.y+bd.y*500};
+          const E=lineIntersect(bd.vp,bEnd,sA_,sB_);
+          if(E){if(!meetPt)meetPt=E;s.dashed.push([bd.vp,{x:E.x,y:E.y,label:''}]);}
+        }
+        if(meetPt)P(meetPt.x,meetPt.y,ctx.intersectionPt||'E');
+      }
+    }
+    
+    // Dimensions
+    for(const seg in segs){const[l1,l2]=seg.split('');if(s.points[l1]&&s.points[l2])s.dims.push({p1:s.points[l1],p2:s.points[l2],text:fmtNum(segs[seg])});}
+    if(segs[A+B]||segs[B+A])s.dims.push({p1:pa,p2:pb,text:'AB='+fmtNum(b)});
+    addQuadExtra(ctx,s,[A,B,C,D]);
+    return s;
+  }
+
+  if(S==='rhombus'||S==='rhombus_diag_dist'){
+    const[A,B,C,D]=ctx.quadVerts;
+    let side=null,angle=null;
+    for(const seg in segs)if([A+B,B+A,A+D,D+A,B+C,C+B,C+D,D+C].includes(seg)){side=segs[seg];break;}
+    if(ctx.sides&&ctx.sides.a&&!side) side=ctx.sides.a;
+    for(const[l,v]of Object.entries(ctx.angles)){angle=v;break;}
+    const distS=ctx.diagToSideDist;
+    let d1=ctx.oneDiagVal||ctx.diag1||null, d2=ctx.diag2||null;
+    for(const seg in segs)if([A+C,C+A,B+D,D+B].includes(seg)){if(!d1)d1=segs[seg];else if(!d2)d2=segs[seg];}
+
+    // Height divides side: DH=21, CH=8
+    const heightDiv=ctx.heightDivides;
+    
+    // === Build from diag-to-side distance ===
+    if(S==='rhombus_diag_dist'&&distS&&d1){
+      const D2=distS,D1=d1;const x_=4*D2*D2*D1*D1/(D1*D1-4*D2*D2);d2=x_>0?sqrt(x_):20;
+      const pa=P(-d1/2,0,A),pc=P(d1/2,0,C),pb=P(0,d2/2,B),pd_=P(0,-d2/2,D),pO=P(0,0,'O');
+      s.lines.push([pa,pb],[pb,pc],[pc,pd_],[pd_,pa]);
+      s.dashed.push([pa,pc],[pb,pd_]);
+      s.equalMarks.push([[pa,pb],[pb,pc],[pc,pd_],[pd_,pa]]);
+      s.rightAngles.push({v:pO,d1:pa,d2:pb});
+      const fH=footPerp(pO,pa,pb);const pH=P(fH.x,fH.y,'H');
+      s.dashed.push([pO,pH]);s.rightAngles.push({v:pH,d1:pO,d2:pb});
+      s.dims.push({p1:pO,p2:pH,text:fmtNum(distS)},{p1:pa,p2:pc,text:'d₁='+fmtNum(d1)});
+      return s;
+    }
+    // === Build from both diagonals ===
+    if(d1&&d2&&!side){
+      side=sqrt((d1/2)**2+(d2/2)**2);
+      angle=r2d(2*atan2(d2/2,d1/2));
+    }
+    // === Build from height divides side ===
+    if(heightDiv){
+      const DH=heightDiv.dh,CH=heightDiv.ch,CD_=DH+CH;side=CD_;
+      const angleD=Math.acos(min(DH/side,1));angle=180-r2d(angleD);
+      const r_=d2r(angle);
+      const pa=P(0,0,A),pb=P(side*cos(r_),side*sin(r_),B),pd_=P(side,0,D),pc=P(side+side*cos(r_),side*sin(r_),C);
+      s.lines.push([pa,pb],[pb,pc],[pc,pd_],[pd_,pa]);
+      const fH=footPerp(pa,pc,pd_);const pH=P(fH.x,fH.y,'H');
+      s.dashed.push([pa,pH]);s.rightAngles.push({v:pH,d1:pa,d2:pd_});
+      s.dims.push({p1:pd_,p2:pH,text:'DH='+fmtNum(DH)},{p1:pH,p2:pc,text:'CH='+fmtNum(CH)});
+      s.equalMarks.push([[pa,pb],[pb,pc],[pc,pd_],[pd_,pa]]);
+      return s;
+    }
+    // === Default build from side + angle ===
+    if(!side)side=8;
+    if(!angle)angle=60;
+    const r_=d2r(angle);
+    const pa=P(0,0,A),pb=P(side*cos(r_),side*sin(r_),B);
+    const pc=P(side+side*cos(r_),side*sin(r_),C),pd_=P(side,0,D);
+    s.lines.push([pa,pb],[pb,pc],[pc,pd_],[pd_,pa]);
+    // All sides equal
+    s.equalMarks.push([[pa,pb],[pb,pc],[pc,pd_],[pd_,pa]]);
+    // Angle marks: A and C equal, B and D equal (supplementary)
+    s.angleMarks.push({v:pa,d1:pd_,d2:pb,label:angle+'°'});
+    s.angleMarks.push({v:pc,d1:pb,d2:pd_,label:angle+'°'});
+    // Diagonals
+    if(has('diagonal')||d1||d2){
+      s.dashed.push([pa,pc],[pb,pd_]);
+      const O=lineIntersect(pa,pc,pb,pd_);
+      if(O){P(O.x,O.y,ctx.intersectionPt||'O');
+        s.rightAngles.push({v:s.points[ctx.intersectionPt||'O'],d1:pa,d2:pb});
+        // Equal halves
+        const pO=s.points[ctx.intersectionPt||'O'];
+        s.equalMarks.push([[pa,pO],[pO,pc]],[[pb,pO],[pO,pd_]]);
+      }
+    }
+    for(const seg in segs){const[l1,l2]=seg.split('');if(s.points[l1]&&s.points[l2])s.dims.push({p1:s.points[l1],p2:s.points[l2],text:fmtNum(segs[seg])});}
+    return s;
+  }
+
+  if(S==='rectangle'){
+    const[A,B,C,D]=ctx.quadVerts;let w=10,h=6,diag=ctx.diag1||null;
+    let perim=ctx.perimeter;
+    for(const seg in segs){
+      if([A+B,B+A,C+D,D+C].includes(seg))h=segs[seg];
+      else if([B+C,C+B,A+D,D+A].includes(seg))w=segs[seg];
+      else if([A+C,C+A,B+D,D+B].includes(seg))diag=segs[seg];
+    }
+    if(ctx.sides&&ctx.sides.a&&ctx.sides.b){w=max(ctx.sides.a,ctx.sides.b);h=min(ctx.sides.a,ctx.sides.b);}
+    if(perim&&diag){const sP=perim/2,wh=(sP*sP-diag*diag)/2,disc=sP*sP-4*wh;if(disc>=0){w=(sP+sqrt(disc))/2;h=sP-w;}}
+    if(perim&&!diag&&w===10){w=perim/2*0.6;h=perim/2-w;}
+    const pa=P(0,0,A),pb=P(0,h,B),pc=P(w,h,C),pd=P(w,0,D);
+    s.lines.push([pa,pb],[pb,pc],[pc,pd],[pd,pa]);
+    // Right angles at all corners
+    [[pa,pd,pb],[pb,pa,pc],[pc,pb,pd],[pd,pc,pa]].forEach(([v,d1_,d2_])=>s.rightAngles.push({v,d1:d1_,d2:d2_}));
+    // Equal opposite sides
+    s.equalMarks.push([[pa,pb],[pc,pd]]);
+    s.equalMarks.push([[pb,pc],[pd,pa]]);
+    // Diagonal
+    if(diag||has('diagonal')){
+      s.dashed.push([pa,pc]);
+      if(diag)s.dims.push({p1:pa,p2:pc,text:'d='+fmtNum(diag)});
+    }
+    // Dimensions
+    s.dims.push({p1:pa,p2:pd,text:fmtNum(w)},{p1:pa,p2:pb,text:fmtNum(h)});
+    addQuadExtra(ctx,s,[A,B,C,D]);
+    return s;
+  }
+
+  if(S==="square"){
+    const[A,B,C,D]=ctx.quadVerts;let side=8;
+    for(const seg in segs){side=segs[seg];break;}
+    const pa=P(0,0,A),pb=P(0,side,B),pc=P(side,side,C),pd=P(side,0,D);
+    s.lines.push([pa,pb],[pb,pc],[pc,pd],[pd,pa]);
+    return s;
+  }
+
+
+  // ===================== PERP BISECTOR =====================
+  if(S==='perp_bisector'){
+    let AB=10;for(const seg in segs){AB=segs[seg];break;}
+    const A=P(-AB/2,0,'A'),B=P(AB/2,0,'B'),M=P(0,0,'M');
+    let PM=7; if(segs.PM||segs.MP)PM=segs.PM||segs.MP;
+    const Pp=P(0,PM,'P');
+    s.lines.push([A,B]);
+    s.dashed.push([P(0,-PM*0.3,''),Pp]);
+    s.rightAngles.push({v:M,d1:B,d2:Pp});
+    s.equalMarks.push([[A,M],[M,B]]);
+    if(segs.PM||segs.MP)s.dims.push({p1:Pp,p2:M,text:fmtNum(PM)});
+    s.dims.push({p1:A,p2:B,text:fmtNum(AB)});
+    return s;
+  }
+
+  return s;
+}
+
+// ====== Add heights / medians / bisectors to a QUADRILATERAL ======
+// pts4: {A,B,C,D} from s.points; labs: [A,B,C,D] labels; s: solution object
+function addQuadExtra(ctx, s, labs) {
+  const [A,B,C,D] = labs;
+  const pts = s.points;
+  const tl = ctx.tl, raw = ctx.raw;
+  const P = (x,y,l) => { const p={x,y,label:l}; if(l) s.points[l]=p; return p; };
+
+  const sides = [
+    [A,B],[B,C],[C,D],[D,A]
+  ];
+
+  // Helper: foot of perpendicular from point p to segment (a,b)
+  function foot(p, a, b) {
+    const dx=b.x-a.x, dy=b.y-a.y, len2=dx*dx+dy*dy;
+    if(len2<1e-9) return {x:a.x,y:a.y};
+    const t=((p.x-a.x)*dx+(p.y-a.y)*dy)/len2;
+    return {x:a.x+t*dx, y:a.y+t*dy};
+  }
+
+  // --- Height in quad ---
+  if(ctx.features.includes('height') || /высот/.test(tl)) {
+    // try to find "высота XY" or "XY — высота" or "высота из X"
+    const hm = raw.match(/высот[а-яёa-z0-9]*\s+([A-Z])([A-Z])/i)
+             || raw.match(/([A-Z])([A-Z])\s*[-—–]\s*высот/i);
+    let fromL = null, footL = null;
+    if(hm) { fromL = hm[1].toUpperCase(); footL = hm[2].toUpperCase(); }
+    if(!fromL) {
+      const hm2 = raw.match(/высот[а-яёa-z0-9]*\s+из\s+(?:вершины\s+)?([A-Z])/i);
+      if(hm2) fromL = hm2[1].toUpperCase();
+    }
+    if(!fromL) fromL = C; // default: from C in quadrilateral
+    if(!footL) footL = 'H';
+
+    const fromPt = pts[fromL];
+    if(fromPt && !pts[footL]) {
+      // find the opposite side (the side not containing fromL)
+      const oppSide = sides.find(([x,y]) => x!==fromL && y!==fromL);
+      if(oppSide) {
+        const a = pts[oppSide[0]], b = pts[oppSide[1]];
+        if(a && b) {
+          const f = foot(fromPt, a, b);
+          const H = P(f.x, f.y, footL);
+          s.dashed.push([fromPt, H]);
+          s.rightAngles.push({v:H, d1:fromPt, d2:b});
+        }
+      }
+    }
+  }
+
+  // --- Median in quad (connects midpoints of opposite sides) ---
+  if(ctx.features.includes('median') || /медиан/.test(tl)) {
+    // "медиана KM" or "средняя линия" -- for quad, median = midline between two sides
+    const mm = raw.match(/медиан[а-яёa-z0-9]*\s+([A-Z])([A-Z])/i);
+    let p1L = null, p2L = null;
+    if(mm) { p1L = mm[1].toUpperCase(); p2L = mm[2].toUpperCase(); }
+    if(!p1L) { p1L = 'M'; p2L = 'N'; }
+    if(!pts[p1L] && !pts[p2L]) {
+      // midpoints of AB and CD
+      const a=pts[A],b=pts[B],c=pts[C],d=pts[D];
+      if(a&&b&&c&&d) {
+        const m1 = P((a.x+b.x)/2,(a.y+b.y)/2,p1L);
+        const m2 = P((c.x+d.x)/2,(c.y+d.y)/2,p2L);
+        s.dashed.push([m1,m2]);
+        s.equalMarks.push([[a,m1],[m1,b]]);
+        s.equalMarks.push([[c,m2],[m2,d]]);
+      }
+    }
+  }
+
+  // --- Single bisector at a vertex in quad ---
+  if(ctx.features.includes('bisector') || /биссектрис/.test(tl)) {
+    // already handled if two bisectors; handle single bisector
+    const bm = raw.match(/биссектрис[а-яёa-z0-9]*\s+угл[а-яёa-z0-9]*\s+([A-Z])[^и]/i)
+             || raw.match(/биссектрис[а-яёa-z0-9]*\s+(?:из\s+)?(?:вершины\s+)?([A-Z])\s/i);
+    if(bm) {
+      const fromL = bm[1].toUpperCase();
+      const idx = labs.indexOf(fromL);
+      if(idx >= 0) {
+        const pts4 = labs.map(l => pts[l]);
+        const bd = quadBisDir(idx, pts4, labs);
+        if(bd) {
+          // intersect with opposite sides
+          const oppSides = sides.filter(([x,y]) => x!==fromL && y!==fromL);
+          let best = null, bestD = Infinity;
+          const end = {x: bd.vp.x + bd.x*1000, y: bd.vp.y + bd.y*1000};
+          for(const [sl1,sl2] of oppSides) {
+            const ip = lineIntersect(bd.vp, end, pts[sl1], pts[sl2]);
+            if(ip) {
+              const d_ = dist(bd.vp, ip);
+              if(d_ > 1 && d_ < bestD) { bestD=d_; best=ip; }
+            }
+          }
+          if(best) {
+            const bLabel = raw.match(/биссектрис[а-яёa-z0-9]*\s+[A-Z]{2}/i)
+              ? raw.match(/биссектрис[а-яёa-z0-9]*\s+([A-Z])([A-Z])/i)?.[2] : 'E';
+            const pE = P(best.x, best.y, bLabel||'E');
+            s.dashed.push([bd.vp, pE]);
+          }
+        }
+      }
+    }
+  }
+}
+
+// Add extra elements to a triangle (heights, medians, bisectors)
+function addExtra(ctx,s,pts,vA,vB,vC,sAB,sBC,sAC){
+  const tA=pts[vA],tB=pts[vB],tC=pts[vC];
+  const tl=ctx.tl;
+  const P=(x,y,l)=>{const p={x,y,label:l};if(l)s.points[l]=p;return p;};
+
+  // --- Heights ---
+  if(ctx.features.includes('height')||/высот/.test(tl)){
+    const hm=ctx.raw.match(/высот[а-яёa-z0-9]*\s+([A-Z])([A-Z])?/);
+    let fromV=null,hLabel=null;
+    if(hm){fromV=hm[1];hLabel=hm[2]||'H';}
+    if(!fromV){
+      const hm2=ctx.raw.match(/высот[а-яёa-z0-9]*\s+из\s+(?:вершины\s+)?([A-Z])/);
+      if(hm2)fromV=hm2[1];
+    }
+    if(!fromV)fromV=vA;
+    if(!hLabel)hLabel='H';
+
+    const fromPt=pts[fromV];
+    const oppVerts=[vA,vB,vC].filter(v=>v!==fromV);
+    const oppA=pts[oppVerts[0]],oppB=pts[oppVerts[1]];
+    const foot=footPerp(fromPt,oppA,oppB);
+    const H=P(foot.x,foot.y,hLabel);
+    s.dashed.push([fromPt,H]);
+    s.rightAngles.push({v:H,d1:fromPt,d2:oppB});
+    // For obtuse triangles: if foot is OUTSIDE segment oppA-oppB → extend the base
+    const dx=oppB.x-oppA.x,dy=oppB.y-oppA.y,len2=dx*dx+dy*dy;
+    if(len2>0){
+      const t=((foot.x-oppA.x)*dx+(foot.y-oppA.y)*dy)/len2;
+      if(t<-0.01||t>1.01){
+        // Foot is outside → draw dashed extension from nearest vertex to foot
+        const nearest=t<0?oppA:oppB;
+        s.dashed.push([nearest,H]);
+      }
+    }
+  }
+
+  // --- Medians ---
+  if(ctx.features.includes('median')||/медиан/.test(tl)){
+    const mm=ctx.raw.match(/медиан[а-яёa-z0-9]*\s+([A-Z])([A-Z])?/);
+    let fromV=null,mLabel=null;
+    if(mm){fromV=mm[1];mLabel=mm[2]||'M';}
+    if(!fromV){
+      const mm2=ctx.raw.match(/медиан[а-яёa-z0-9]*\s+из\s+(?:вершины\s+)?([A-Z])/);
+      if(mm2)fromV=mm2[1];
+    }
+    if(!fromV)fromV=vB;
+    if(!mLabel)mLabel='M';
+
+    const fromPt=pts[fromV];
+    const oppVerts=[vA,vB,vC].filter(v=>v!==fromV);
+    const oppA=pts[oppVerts[0]],oppB=pts[oppVerts[1]];
+    const M=P((oppA.x+oppB.x)/2,(oppA.y+oppB.y)/2,mLabel);
+    s.dashed.push([fromPt,M]);
+    s.equalMarks.push([[oppA,M],[M,oppB]]);
+  }
+
+  // --- Bisectors ---
+  if(ctx.features.includes('bisector')||/биссектрис/.test(tl)){
+    const bm=ctx.raw.match(/биссектрис[а-яёa-z0-9]*\s+([A-Z])([A-Z])?/);
+    let fromV=null,bLabel=null;
+    if(bm){fromV=bm[1];bLabel=bm[2]||'D';}
+    if(!fromV)fromV=vA;
+    if(!bLabel)bLabel='D';
+
+    const fromPt=pts[fromV];
+    const oppVerts=[vA,vB,vC].filter(v=>v!==fromV);
+    const oppA=pts[oppVerts[0]],oppB=pts[oppVerts[1]];
+    // Bisector divides opposite side in ratio of adjacent sides
+    const dA=dist(fromPt,oppA),dB=dist(fromPt,oppB);
+    const t=dA/(dA+dB);
+    const D_=P(oppA.x+(oppB.x-oppA.x)*t, oppA.y+(oppB.y-oppA.y)*t, bLabel);
+    s.dashed.push([fromPt,D_]);
+  }
+
+  // --- Diagonals in quad are handled elsewhere ---
+}
+
+function fmtNum(v){
+  if(v===undefined||v===null)return'';
+  if(abs(v-Math.round(v))<0.01)return String(Math.round(v));
+  return v.toFixed(1);
+}
+
+// ============ RENDERER ============
+function render(sol,W=720,H=540){
+  const PAD=70,pts=sol.points,aX=[],aY=[];
+  for(const p of Object.values(pts)){if(p.label!==undefined)aX.push(p.x);aY.push(p.y);}
+  for(const c of sol.circles){aX.push(c.center.x-c.radius,c.center.x+c.radius);aY.push(c.center.y-c.radius,c.center.y+c.radius);}
+  if(!aX.length)return errSvg(W,H);
+
+  const mnX=min(...aX),mxX=max(...aX),mnY=min(...aY),mxY=max(...aY);
+  const rX=mxX-mnX||10,rY=mxY-mnY||10,dW=W-2*PAD,dH=H-2*PAD;
+  const sc=min(dW/rX,dH/rY);
+  const tx=x=>PAD+(x-mnX)*sc+(dW-rX*sc)/2;
+  const ty=y=>H-PAD-(y-mnY)*sc-(dH-rY*sc)/2;
+
+  let o=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`;
+  o+=`<defs><filter id="sh"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-opacity=".06"/></filter></defs>`;
+  o+=`<rect width="${W}" height="${H}" fill="#faf9f7" rx="12" filter="url(#sh)"/>`;
+  o+=`<style>
+.L{stroke:#1b1b1e;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;fill:none}
+.D{stroke:#9a9590;stroke-width:1.5;stroke-dasharray:7,4;stroke-linecap:round;fill:none}
+.C{stroke:#1b1b1e;stroke-width:2;fill:none}
+.P{fill:#1b1b1e}
+.T{font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;fill:#1b1b1e;font-style:italic;font-weight:600}
+.V{font-family:'DM Sans',sans-serif;font-size:12px;fill:#8a7e73}
+.R{stroke:#b44a2d;stroke-width:1.5;fill:none}
+.E{stroke:#2d6b4f;stroke-width:2;stroke-linecap:round}
+.A{stroke:#b44a2d;stroke-width:1.3;fill:none}
+.AL{font-family:'Cormorant Garamond',serif;font-size:14px;fill:#b44a2d;font-style:italic}
+.HA{stroke:#b44a2d;stroke-width:3.5;fill:none;stroke-linecap:round;opacity:.55}
+</style>`;
+
+  // Circles
+  for(const c of sol.circles)
+    o+=`<circle cx="${tx(c.center.x).toFixed(1)}" cy="${ty(c.center.y).toFixed(1)}" r="${(c.radius*sc).toFixed(1)}" class="C"/>`;
+
+  // Highlighted arcs on circle
+  for(const ha of sol.highlightArcs||[]){
+    const cx_=tx(ha.center.x),cy_=ty(ha.center.y),r_=ha.radius*sc;
+    const p1x=tx(ha.p1.x),p1y=ty(ha.p1.y),p2x=tx(ha.p2.x),p2y=ty(ha.p2.y);
+    // Compute angles in screen space (y inverted)
+    const a1=atan2(p1y-cy_,p1x-cx_), a2=atan2(p2y-cy_,p2x-cx_);
+    // Draw minor arc from p1 to p2
+    let sweep=1, largeArc=0;
+    // Determine if we need large arc
+    let diff=a2-a1; if(diff<0)diff+=2*PI;
+    if(ha.minor){largeArc=diff>PI?1:0;}
+    else{largeArc=diff>PI?0:1;}
+    o+=`<path d="M${p1x.toFixed(1)},${p1y.toFixed(1)}A${r_.toFixed(1)},${r_.toFixed(1)},0,${largeArc},${sweep},${p2x.toFixed(1)},${p2y.toFixed(1)}" class="HA"/>`;
+  }
+
+  // Lines
+  for(const[p1,p2]of sol.lines)
+    o+=`<line x1="${tx(p1.x).toFixed(1)}" y1="${ty(p1.y).toFixed(1)}" x2="${tx(p2.x).toFixed(1)}" y2="${ty(p2.y).toFixed(1)}" class="L"/>`;
+
+  // Dashed
+  for(const[p1,p2]of sol.dashed)
+    o+=`<line x1="${tx(p1.x).toFixed(1)}" y1="${ty(p1.y).toFixed(1)}" x2="${tx(p2.x).toFixed(1)}" y2="${ty(p2.y).toFixed(1)}" class="D"/>`;
+
+  // Right angles
+  for(const m of sol.rightAngles){
+    const vx=tx(m.v.x),vy=ty(m.v.y);
+    const d1x=tx(m.d1.x),d1y=ty(m.d1.y),d2x=tx(m.d2.x),d2y=ty(m.d2.y);
+    const l1=hypot(d1x-vx,d1y-vy),l2=hypot(d2x-vx,d2y-vy);
+    if(l1<2||l2<2)continue;
+    const sz=12;
+    const ux1=(d1x-vx)/l1*sz,uy1=(d1y-vy)/l1*sz,ux2=(d2x-vx)/l2*sz,uy2=(d2y-vy)/l2*sz;
+    o+=`<path d="M${(vx+ux1).toFixed(1)},${(vy+uy1).toFixed(1)}L${(vx+ux1+ux2).toFixed(1)},${(vy+uy1+uy2).toFixed(1)}L${(vx+ux2).toFixed(1)},${(vy+uy2).toFixed(1)}" class="R"/>`;
+  }
+
+  // Angle marks (arcs with labels)
+  for(const m of sol.angleMarks||[]){
+    const vx=tx(m.v.x),vy=ty(m.v.y);
+    const p1x=tx(m.d1.x),p1y=ty(m.d1.y),p2x=tx(m.d2.x),p2y=ty(m.d2.y);
+    let a1=atan2(p1y-vy,p1x-vx),a2=atan2(p2y-vy,p2x-vx);
+    if(a2<a1)a2+=2*PI;
+    if(a2-a1>PI){const tmp=a1;a1=a2;a2=tmp+2*PI;}
+    const r=22;
+    o+=`<path d="M${(vx+r*cos(a1)).toFixed(1)},${(vy+r*sin(a1)).toFixed(1)}A${r},${r},0,0,1,${(vx+r*cos(a2)).toFixed(1)},${(vy+r*sin(a2)).toFixed(1)}" class="A"/>`;
+    const mid_=(a1+a2)/2;
+    o+=`<text x="${(vx+34*cos(mid_)).toFixed(1)}" y="${(vy+34*sin(mid_)).toFixed(1)}" class="AL" text-anchor="middle" dominant-baseline="middle">${m.label||''}</text>`;
+  }
+
+  // Inscribed angle arc marks
+  for(const m of sol.arcMarks||[]){
+    const vx=tx(m.vertex.x),vy=ty(m.vertex.y);
+    const p1x=tx(m.p1.x),p1y=ty(m.p1.y),p2x=tx(m.p2.x),p2y=ty(m.p2.y);
+    let a1=atan2(p1y-vy,p1x-vx),a2=atan2(p2y-vy,p2x-vx);
+    if(a2<a1)a2+=2*PI;
+    const r=25;
+    o+=`<path d="M${(vx+r*cos(a1)).toFixed(1)},${(vy+r*sin(a1)).toFixed(1)}A${r},${r},0,${(a2-a1>PI)?1:0},1,${(vx+r*cos(a2)).toFixed(1)},${(vy+r*sin(a2)).toFixed(1)}" class="A"/>`;
+    const mid_=(a1+a2)/2;
+    o+=`<text x="${(vx+38*cos(mid_)).toFixed(1)}" y="${(vy+38*sin(mid_)).toFixed(1)}" class="AL" text-anchor="middle" dominant-baseline="middle">${m.label||''}</text>`;
+  }
+
+  // Equal marks
+  for(let gi=0;gi<sol.equalMarks.length;gi++){
+    const ticks=gi+1;
+    for(const pair of sol.equalMarks[gi]){
+      if(pair.length!==2)continue;const[p1,p2]=pair;
+      const mx=(tx(p1.x)+tx(p2.x))/2,my=(ty(p1.y)+ty(p2.y))/2;
+      const dx=tx(p2.x)-tx(p1.x),dy=ty(p2.y)-ty(p1.y),len=hypot(dx,dy);if(len<2)continue;
+      const nx=-dy/len,ny=dx/len;
+      for(let i=0;i<ticks;i++){
+        const off=(i-(ticks-1)/2)*5;
+        const cx_=mx+dx/len*off,cy_=my+dy/len*off;
+        o+=`<line x1="${(cx_-nx*7).toFixed(1)}" y1="${(cy_-ny*7).toFixed(1)}" x2="${(cx_+nx*7).toFixed(1)}" y2="${(cy_+ny*7).toFixed(1)}" class="E"/>`;
+      }
+    }
+  }
+
+  // Dimension labels
+  for(const dm of sol.dims){
+    const mx=(tx(dm.p1.x)+tx(dm.p2.x))/2,my=(ty(dm.p1.y)+ty(dm.p2.y))/2;
+    const dx=ty(dm.p1.y)-ty(dm.p2.y),dy=tx(dm.p2.x)-tx(dm.p1.x);
+    const len=hypot(dx,dy)||1;
+    o+=`<text x="${(mx+dx/len*16).toFixed(1)}" y="${(my+dy/len*16).toFixed(1)}" class="V" text-anchor="middle" dominant-baseline="middle">${dm.text}</text>`;
+  }
+
+  // Points & labels (smart placement)
+  const cx_=Object.values(pts).reduce((s,p)=>s+tx(p.x),0)/max(Object.keys(pts).length,1);
+  const cy_=Object.values(pts).reduce((s,p)=>s+ty(p.y),0)/max(Object.keys(pts).length,1);
+  for(const[label,p]of Object.entries(pts)){
+    if(!label)continue;
+    const px=tx(p.x),py=ty(p.y);
+    o+=`<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="3" class="P"/>`;
+    let dx=px-cx_,dy=py-cy_,d=hypot(dx,dy);
+    if(d<1){dx=0;dy=-1;d=1;}
+    const off=20;
+    o+=`<text x="${(px+dx/d*off).toFixed(1)}" y="${(py+dy/d*off).toFixed(1)}" class="T" text-anchor="middle" dominant-baseline="middle">${label}</text>`;
+  }
+
+  return o+'</svg>';
+}
+
+function errSvg(W,H){
+  return`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><rect width="${W}" height="${H}" fill="#faf9f7" rx="12"/><text x="${W/2}" y="${H/2}" text-anchor="middle" fill="#b44a2d" font-size="16" font-family="DM Sans,sans-serif">Не удалось построить чертёж. Попробуйте переформулировать задачу.</text></svg>`;
+}
+
+return{parse,solve,render};
+})();
+
+// ====== UI ======
+const ta=document.getElementById('ta'),genBtn=document.getElementById('gen'),clrBtn=document.getElementById('clr');
+const exSel=document.getElementById('ex'),svgBox=document.getElementById('svg-box');
+const ph=document.getElementById('ph'),errEl=document.getElementById('err'),nfoEl=document.getElementById('nfo');
+const dlBar=document.getElementById('dlbar');let curSvg='';
+
+EXAMPLES.forEach((e,i)=>{const o=document.createElement('option');o.value=i;o.textContent=e.t;exSel.appendChild(o);});
+exSel.addEventListener('change',function(){if(this.value!==''){ta.value=EXAMPLES[+this.value].s;ta.focus();}});
+genBtn.addEventListener('click',generate);
+ta.addEventListener('keydown',e=>{if(e.ctrlKey&&e.key==='Enter')generate();});
+clrBtn.addEventListener('click',()=>{ta.value='';svgBox.innerHTML='';curSvg='';ph.style.display='';dlBar.classList.remove('vis');errEl.classList.remove('vis');nfoEl.classList.remove('vis');exSel.selectedIndex=0;ta.focus();});
+document.getElementById('dl').addEventListener('click',()=>{if(!curSvg)return;const b=new Blob([curSvg],{type:'image/svg+xml'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='geometry.svg';a.click();URL.revokeObjectURL(a.href);});
+document.getElementById('cp').addEventListener('click',function(){if(!curSvg)return;navigator.clipboard.writeText(curSvg).then(()=>{this.textContent='✓ Скопировано';setTimeout(()=>this.innerHTML='⎘ Копировать',1500);});});
+
+function generate(){
+  const text=ta.value.trim();if(!text){showErr('Введите условие задачи');return;}
+  errEl.classList.remove('vis');nfoEl.classList.remove('vis');
+  try{
+    const parsed=GEO.parse(text);
+    const solution=GEO.solve(parsed);
+    curSvg=GEO.render(solution);
+    svgBox.innerHTML=curSvg;ph.style.display='none';dlBar.classList.add('vis');
+
+    const nm={tangent_secant:'Касательная + секущая',tangent_only:'Касательная',two_tangents:'Две касательные',chord_perp_radius:'Хорда ⊥ радиусу',chord_distance:'Хорда → расстояние',inscribed_angle:'Вписанный угол',central_angle:'Центральный угол',central_and_inscribed:'Центральный + вписанный',inscribed_angle_diameter:'Угол на диаметр (Фалес)',inscribed_angle_tangent:'Вписанный угол + касательная',two_inscribed_angles:'Два вписанных на одну дугу',diameter_angle:'Угол на диаметр',circle_on_side_tangent:'Окр. на стороне △ + касательная',tangent_angle_arc:'Касательная + дуга',right_tri_height_circle:'△ + окр. на высоте',tri_circumscribed:'△ + описанная окр.',tri_incircle:'△ + вписанная окр.',tri_inscribed_in_circle:'△ вписан в окр.',circle_only:'Окружность',triangle:'Треугольник',trapezoid:'Трапеция',trapezoid_perp_diag:'Трапеция: диагонали ⊥',parallelogram:'Параллелограмм',pgram_bisectors:'Пар-мм: биссектрисы',rhombus:'Ромб',rhombus_diag_dist:'Ромб: расст. до стороны',rectangle:'Прямоугольник',square:'Квадрат',perp_bisector:'Серединный ⊥',parallel_segments:'Отрезки на параллельных',tri_perp_median:'△: ⊥ к медиане'};
+    const parts=[nm[parsed.scenario]||parsed.scenario];
+    const extras=parsed.features.filter(f=>['height','median','bisector','diagonal','incircle','circumcircle','central_angle','inscribed_angle','diameter'].includes(f));
+    const eNames={height:'высота',median:'медиана',bisector:'биссектриса',diagonal:'диагональ',incircle:'вписанная окр.',circumcircle:'описанная окр.',central_angle:'центральный угол',inscribed_angle:'вписанный угол',diameter:'диаметр'};
+    extras.forEach(e=>parts.push(eNames[e]||e));
+    for(const seg in parsed.segments)parts.push(`${seg}=${fmtN(parsed.segments[seg])}`);
+    for(const[l,v]of Object.entries(parsed.angles))parts.push(`∠${l}=${v}°`);
+    if(parsed.radiusVal)parts.push(`R=${parsed.radiusVal}`);
+    nfoEl.innerHTML='<b>Распознано:</b> '+parts.join(' · ');nfoEl.classList.add('vis');
+  }catch(e){showErr('Ошибка: '+e.message);ph.style.display='';}
+}
+function fmtN(v){return Math.abs(v-Math.round(v))<.01?Math.round(v):v.toFixed(1);}
+function showErr(m){errEl.textContent=m;errEl.classList.add('vis');}
+
+// ====== EXAMPLES MODAL ======
+const EX_CATS=[
+  {id:'circle', label:'Окружность', icon:'',
+   items: EXAMPLES.filter((_,i)=>i<=6)},
+  {id:'triangle', label:'Треугольники', icon:'',
+   items: EXAMPLES.filter((_,i)=>i>=7&&i<=14)},
+  {id:'quad', label:'Четырёхугольники', icon:'',
+   items: EXAMPLES.filter((_,i)=>i>=15&&i<=21)},
+  {id:'angles', label:'Углы', icon:'',
+   items: EXAMPLES.filter((_,i)=>i>=22&&i<=28)},
+  {id:'oge', label:'Дополнительные задачи', icon:'',
+   items: EXAMPLES.filter((_,i)=>i>=29)},
+];
+
+const modal=document.getElementById('exModal');
+const modalTabs=document.getElementById('modalTabs');
+const modalBody=document.getElementById('modalBody');
+let activeCat=0;
+
+function renderModalTabs(){
+  modalTabs.innerHTML='';
+  EX_CATS.forEach((cat,i)=>{
+    const btn=document.createElement('button');
+    btn.className='mtab'+(i===activeCat?' active':'');
+    btn.textContent=cat.icon+' '+cat.label;
+    btn.addEventListener('click',()=>{activeCat=i;renderModalTabs();renderModalGrid();});
+    modalTabs.appendChild(btn);
+  });
+}
+
+function renderModalGrid(){
+  const cat=EX_CATS[activeCat];
+  modalBody.innerHTML='';
+  const grid=document.createElement('div');
+  grid.className='ex-grid';
+  cat.items.forEach(ex=>{
+    const card=document.createElement('button');
+    card.className='ex-card';
+    card.innerHTML=`<div class="ex-card-title">${ex.t}</div><div class="ex-card-text">${ex.s}</div>`;
+    card.addEventListener('click',()=>{
+      ta.value=ex.s;
+      closeModal();
+      ta.focus();
+      generate();
+    });
+    grid.appendChild(card);
+  });
+  modalBody.appendChild(grid);
+}
+
+function openModal(){activeCat=0;renderModalTabs();renderModalGrid();modal.classList.add('open');document.body.style.overflow='hidden';}
+function closeModal(){modal.classList.remove('open');document.body.style.overflow='';}
+
+document.getElementById('exBtn').addEventListener('click',openModal);
+document.getElementById('modalClose').addEventListener('click',closeModal);
+modal.addEventListener('click',e=>{if(e.target===modal)closeModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modal.classList.contains('open'))closeModal();});
+</script>
+</body>
+</html>
