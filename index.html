@@ -322,12 +322,13 @@ function detectFeatures(tl){
   // Detect central/inscribed angle — check both 'угол' (nom.) and 'угл' (other cases)
   const hasAngleWord=t=>(t.includes('угол')||t.includes('угл'));
   if(tl.includes('центральн')&&hasAngleWord(tl))F.add('central_angle');
-  if(tl.includes('вписанн')&&hasAngleWord(tl))F.add('inscribed_angle');
+  if(tl.includes('вписанн')&&hasAngleWord(tl)&&!tl.includes('окружност'))F.add('inscribed_angle');
   if(tl.includes('вписан')&&tl.includes('окружност')&&!F.has('inscribed_angle'))F.add('incircle');
-  if(tl.includes('описан')&&tl.includes('окружност'))F.add('circumcircle');
+  if(/(?<![а-яёa-z])описан/.test(tl)&&tl.includes('окружност')&&!tl.includes('вписан'))F.add('circumcircle');
   if(tl.includes('средн')&&tl.includes('лини'))F.add('midline');
   if(tl.includes('серединн')&&tl.includes('перпендикуляр'))F.add('perp_bisector');
   if(tl.includes('параллельн'))F.add('parallel_lines');
+  if(/точк[а-яёa-z]*\s+[A-Z]\s+лежит|[A-Z]\s+лежит(?:\s+на)?\s*(?:прям|отрезк|луч|[A-Z]{2})/i.test(clean)||/точк[а-яёa-z]*\s+[A-Z]\s+(?:на|лежит)/i.test(clean))F.add('point_on_line');
   if(/биссектрис[а-яёa-z0-9]*\s+угл[а-яёa-z0-9]*\s+[a-z]\s+и\s+[a-z]/i.test(tl))F.add('two_bisectors');
   if(/пересекаются/.test(tl))F.add('intersect_at');
   if(/центр[а-яёa-z0-9]*\s+на\s+сторон/.test(tl))F.add('center_on_side');
@@ -341,7 +342,7 @@ function detectFeatures(tl){
   if(/\bлуч[а-яё]*/.test(tl))F.add('ray');
   if(/периметр/.test(tl))F.add('perimeter');
   if(/прямо[йе]\s+угол|угол[а-яёa-z0-9]*\s+[а-яёa-z0-9]+\s+рав[а-яёa-z0-9]+\s+90|=\s*90/.test(tl))F.add('right');
-  if(/описан[а-яёa-z0-9]*\s+около|около\s+[а-яёa-z0-9]+\s+описан/.test(tl))F.add('circumcircle');
+  if(/(?<![а-яёa-z])описан[а-яёa-z0-9]*\s+около|около\s+[а-яёa-z0-9]+\s+(?<![а-яёa-z])описан/.test(tl))F.add('circumcircle');
   return[...F];
 }
 
@@ -400,7 +401,7 @@ function parse(text){
   {const m=clean.match(/центральн[а-яёa-z0-9]*\s+угол\s+([A-Z]{2,3})/i);
   if(m&&!Object.keys(ctx.angles).some(k=>k.startsWith('central_')))
     ctx.angles['central_'+m[1].toUpperCase()]=90;}
-  {const m=clean.match(/вписанн[а-яёa-z0-9]*\s+угол\s+([A-Z]{2,3})/i);
+  if(!tl.includes('окружност')){const m=clean.match(/вписанн[а-яёa-z0-9]*\s+угол\s+([A-Z]{2,3})/i);
   if(m&&!Object.keys(ctx.angles).some(k=>k.startsWith('inscribed_')))
     ctx.angles['inscribed_'+m[1].toUpperCase()]=35;}
   // Число без буквенного имени: "центральный угол равен 70"
@@ -590,6 +591,59 @@ function parse(text){
   // "отрезки AB и CD"
   {const m=clean.match(/отрезк[а-яёa-z]*\s+([A-Za-z]{2}(?:\s+и\s+[A-Za-z]{2})+)/i);
   if(m)for(const p of m[1].split(/\s+и\s+/))ctx.lineObjects.push({kind:'segment',label:p.trim().toUpperCase()});}
+  // Parse "under angle N" between objects: "под углом 60" / "под углом 60°"
+  {const m=clean.match(/под\s+углом\s+(\d+(?:[.,]\d+)?)\s*°?/i);
+   if(m) ctx.lineAngle=parseFloat(m[1].replace(',','.'));}
+  // Parse perpendicular relation: "перпендикулярн" → 90°
+  if(/перпендикулярн/i.test(tl)&&!ctx.lineAngle) ctx.lineAngle=90;
+  // Parse "к прямой/отрезку XY проведён/проведена ... AB" → AB starts from XY
+  {const m=clean.match(/к\s+(?:прям[а-яё]+|отрезк[а-яё]*)\s+([A-Z]{2})\s+провед[а-яё]+\s+(?:прям[а-яё]*|отрезо[а-яё]*|луч[а-яё]*)\s+([A-Z]{2})/i);
+   if(m) ctx.lineFrom={base:m[1].toUpperCase(), drawn:m[2].toUpperCase()};}
+  // Also: "к прямой XY провед... AB" with different word order
+  if(!ctx.lineFrom){
+    const m=clean.match(/провед[а-яё]+\s+(?:прям[а-яё]*|отрезо[а-яё]*|луч[а-яё]*)\s+([A-Z]{2})\s+к\s+(?:прям[а-яё]+|отрезк[а-яё]*)\s+([A-Z]{2})/i);
+    if(m) ctx.lineFrom={base:m[2].toUpperCase(), drawn:m[1].toUpperCase()};
+  }
+  // Parse "XY параллельна ZW" / "XY параллельно ZW" — bare segment labels
+  {const m=clean.match(/([A-Z]{2})\s+параллельн[а-яёa-z]*\s+([A-Z]{2})/i);
+   if(m){
+     const l1=m[1].toUpperCase(), l2=m[2].toUpperCase();
+     if(!ctx.lineObjects.find(o=>o.label===l1)) ctx.lineObjects.push({kind:'line',label:l1});
+     if(!ctx.lineObjects.find(o=>o.label===l2)) ctx.lineObjects.push({kind:'line',label:l2});
+     ctx.parallelPair=[l1,l2];
+   }}
+  // Parse "XY перпендикулярна ZW"
+  {const m=clean.match(/([A-Z]{2})\s+перпендикулярн[а-яёa-z]*\s+([A-Z]{2})/i);
+   if(m){
+     const l1=m[1].toUpperCase(), l2=m[2].toUpperCase();
+     if(!ctx.lineObjects.find(o=>o.label===l1)) ctx.lineObjects.push({kind:'line',label:l1});
+     if(!ctx.lineObjects.find(o=>o.label===l2)) ctx.lineObjects.push({kind:'line',label:l2});
+     ctx.lineAngle=90; ctx.lineFrom={base:l2,drawn:l1};
+   }}
+  // Parse "точка P лежит на RK" / "точка P на отрезке RK" / "P — точка на AB"
+  ctx.pointsOnLine=ctx.pointsOnLine||[];
+  {// Pattern 1: "точка X лежит на YZ" / "точка X на YZ"
+   for(const m of clean.matchAll(/точк[а-яёa-z]*\s+([A-Z])\s+(?:лежит\s+на|на)\s*(?:прям[а-яёa-z]*|отрезк[а-яёa-z]*|луч[а-яёa-z]*)?\s*([A-Z]{2})/gi))
+     ctx.pointsOnLine.push({point:m[1].toUpperCase(), line:m[2].toUpperCase()});}
+  {// Pattern 2: "X лежит на YZ" (without слово точка)
+   for(const m of clean.matchAll(/\b([A-Z])\s+лежит\s+на\s*(?:прям[а-яёa-z]*|отрезк[а-яёa-z]*|луч[а-яёa-z]*)?\s*([A-Z]{2})\b/gi))
+     if(!ctx.pointsOnLine.find(p=>p.point===m[1].toUpperCase()))
+       ctx.pointsOnLine.push({point:m[1].toUpperCase(), line:m[2].toUpperCase()});}
+  {// Pattern 3: "P — точка на AB" / "P - точка на AB"
+   for(const m of clean.matchAll(/([A-Z])\s*[—–-]\s*точк[а-яёa-z]*\s+на\s+(?:прям[а-яёa-z]*|отрезк[а-яёa-z]*|луч[а-яёa-z]*)?\s*([A-Z]{2})/gi))
+     if(!ctx.pointsOnLine.find(p=>p.point===m[1].toUpperCase()))
+       ctx.pointsOnLine.push({point:m[1].toUpperCase(), line:m[2].toUpperCase()});}
+  {// Pattern 4: "середина AB" → midpoint
+   const m=clean.match(/([A-Z])\s*(?:—|-)?\s*середин[а-яёa-z]*\s+([A-Z]{2})/i);
+   if(m) ctx.pointsOnLine.push({point:m[1].toUpperCase(), line:m[2].toUpperCase(), isMid:true});}
+  // Auto-add the line objects referenced by pointsOnLine
+  for(const pol of ctx.pointsOnLine){
+    if(!ctx.lineObjects.find(o=>o.label===pol.line)){
+      // Use 'line' kind by default (прямая), user can override with explicit отрезок/луч
+      const kindHint= /отрезок|отрезка/i.test(tl)?'segment':/луч/i.test(tl)?'ray':'line';
+      ctx.lineObjects.push({kind:kindHint, label:pol.line});
+    }
+  }
   // Дедупликация
   {const seen=new Set();ctx.lineObjects=ctx.lineObjects.filter(o=>{const k=o.kind+o.label;if(seen.has(k))return false;seen.add(k);return true;});}
   // Если просто сказано "прямая" / "отрезок" / "луч" без букв — добавляем безымянные
@@ -605,8 +659,8 @@ function parse(text){
     if(has('center_on_side')&&has('triangle'))ctx.scenario='circle_on_side_tangent';
     else if(has('triangle')&&has('tangent')&&has('passes_through'))ctx.scenario='circle_on_side_tangent';
     else if(has('triangle')&&has('diameter')&&has('height'))ctx.scenario='right_tri_height_circle';
-    else if(has('triangle')&&(has('circumscribed')||has('circumcircle')))ctx.scenario='tri_circumscribed';
     else if(has('triangle')&&has('incircle'))ctx.scenario='tri_incircle';
+    else if(has('triangle')&&(has('circumscribed')||has('circumcircle'))&&!has('incircle'))ctx.scenario='tri_circumscribed';
     else if(has('triangle')&&has('inscribed')&&!has('inscribed_angle'))ctx.scenario='tri_inscribed_in_circle';
     // --- Auto-detect from angles ---
     // If we have any angle marked as "central_*" → central angle problem
@@ -644,12 +698,17 @@ function parse(text){
       if(foundCentral&&foundInscribed) ctx.scenario='central_and_inscribed';
       else if(foundCentral) ctx.scenario='central_angle';
       else if(foundInscribed) ctx.scenario='inscribed_angle';
-      // Fallback: triangle+circle → circumscribed
+      // Fallback: triangle+circle → incircle if вписан, else circumscribed
+      else if(has('triangle')&&has('incircle')) ctx.scenario='tri_incircle';
       else if(has('triangle')) ctx.scenario='tri_circumscribed';
       else ctx.scenario='circle_only';
     }
   }
   // Если нашли линейные объекты И нет геометрической фигуры → lines_only
+  // Also trigger if we have pointsOnLine entries
+  if(!ctx.scenario&&(has('point_on_line')||ctx.pointsOnLine&&ctx.pointsOnLine.length)&&
+     !has('circle')&&!has('triangle')&&!has('trapezoid')&&!has('parallelogram')&&!has('rhombus')&&!has('rectangle')&&!has('square'))
+    ctx.scenario='lines_only';
   if(!ctx.scenario&&ctx.lineObjects&&ctx.lineObjects.length&&
      !has('circle')&&!has('triangle')&&!has('trapezoid')&&!has('parallelogram')&&!has('rhombus')&&!has('rectangle')&&!has('square'))
     ctx.scenario='lines_only';
@@ -657,6 +716,7 @@ function parse(text){
   if(!ctx.scenario){
     if(has('perp_bisector'))ctx.scenario='perp_bisector';
     else if(has('parallel_lines')&&has('intersect_at'))ctx.scenario='parallel_segments';
+    else if(has('parallel_lines')&&!has('triangle')&&!has('trapezoid')&&!has('parallelogram'))ctx.scenario='lines_only';
     else if(has('triangle')&&has('parallel_lines'))ctx.scenario='tri_parallel_line';
     else if(has('triangle')&&ctx.perpToMedian)ctx.scenario='tri_perp_median';
     else if(has('triangle'))ctx.scenario='triangle';
@@ -668,6 +728,12 @@ function parse(text){
     else if(has('rhombus'))ctx.scenario='rhombus';
     else if(has('rectangle'))ctx.scenario='rectangle';
     else if(has('square'))ctx.scenario='square';
+    // If input is just two capital letters (e.g. "FG") → draw a line by default
+    else if(/^[A-Za-z]{2}$/.test(text.trim())||/^[A-Za-z]{2}$/.test(clean.trim())){
+      const lbl=(text.trim()||clean.trim()).toUpperCase();
+      ctx.lineObjects=[{kind:'line',label:lbl}];
+      ctx.scenario='lines_only';
+    }
     else ctx.scenario='triangle';
   }
 
@@ -1478,53 +1544,152 @@ function solve(ctx){
   // ===================== LINES / SEGMENTS / RAYS =====================
   if(S==='lines_only'){
     const objs=ctx.lineObjects||[];
-    // Распределяем объекты по вертикали с небольшим смещением
+    const halfW=16;
+    const betweenAngle=ctx.lineAngle||null;
+    const lineFrom=ctx.lineFrom||null;
+
+    // ── CASE: two parallel lines (e.g. "LK параллельна BA") ───────────────
+    if(ctx.parallelPair){
+      const [l1,l2]=ctx.parallelPair;
+      // Ensure we have two line objects with these labels
+      const ensureObj=(lbl,i)=>{
+        const found=objs.find(o=>o.label===lbl);
+        return found||{kind:'line',label:lbl};
+      };
+      const obj1=ensureObj(l1,0), obj2=ensureObj(l2,1);
+      const gap=9;
+      [[obj1,-gap/2],[obj2,gap/2]].forEach(([obj,yOff],i)=>{
+        const lA=obj.label[0]||String.fromCharCode(65+i*2);
+        const lB=obj.label[1]||String.fromCharCode(66+i*2);
+        const A=P(-halfW,yOff,lA), B=P(halfW,yOff,lB);
+        s.lines.push([A,B]);
+        s.fullLines=s.fullLines||[]; s.fullLines.push({p1:A,p2:B});
+      });
+      // Parallel tick marks
+      const pA=s.lines[0][0], pB=s.lines[0][1];
+      const pC=s.lines[1][0], pD=s.lines[1][1];
+      s.equalMarks.push([[pA,pB],[pC,pD]]);
+      return s;
+    }
+
+    // ── CASE: "к прямой DS проведён отрезок GH под углом 60" ──────────────
+    // We have a base line and a drawn object starting from a point on the base
+    if(lineFrom && objs.length>=2){
+      const baseObj=objs.find(o=>o.label===lineFrom.base)||objs[0];
+      const drawnObj=objs.find(o=>o.label===lineFrom.drawn)||objs[1];
+      const angle=betweenAngle||60; // default 60 if not specified
+
+      // Draw base line (horizontal)
+      const bA=P(-halfW, 0, baseObj.label[0]||'A');
+      const bB=P( halfW, 0, baseObj.label[1]||'B');
+      s.lines.push([bA,bB]);
+      if(baseObj.kind==='line'||!baseObj.kind){
+        s.fullLines=s.fullLines||[]; s.fullLines.push({p1:bA,p2:bB});
+      }
+
+      // Foot of drawn object on base line — place at 1/3 from left
+      const footX=-halfW/3, footY=0;
+
+      // Direction of drawn object at given angle from base (horizontal)
+      const rad=d2r(angle);
+      const len=halfW*0.7;
+      const dxD=len*cos(rad), dyD=-len*sin(rad); // negative y = upward in screen coords
+
+      const dA=P(footX, footY, drawnObj.label[0]||'G');   // start on base line
+      const dB=P(footX+dxD, footY+dyD, drawnObj.label[1]||'H');
+      s.lines.push([dA,dB]);
+      if(drawnObj.kind==='segment'){
+        const segKey=drawnObj.label;
+        if(ctx.segments[segKey])s.dims.push({p1:dA,p2:dB,text:fmtNum(ctx.segments[segKey])});
+      }
+
+      // Angle mark at foot
+      if(betweenAngle) s.angleMarks.push({v:dA, d1:bB, d2:dB, label:fmtNum(betweenAngle)+'°'});
+
+      // Right angle mark if perpendicular
+      if(angle===90) s.rightAngles.push({v:dA,d1:bA,d2:dB});
+      return s;
+    }
+
+    // ── CASE: two objects with angle between them (no explicit relation) ──
+    if(objs.length>=2 && betweenAngle){
+      const baseObj=objs[0], drawnObj=objs[1];
+      const angle=betweenAngle;
+
+      // Base: horizontal
+      const bA=P(-halfW, 0, baseObj.label[0]||'A');
+      const bB=P( halfW, 0, baseObj.label[1]||'B');
+      s.lines.push([bA,bB]);
+      if(baseObj.kind==='line'||!baseObj.kind){s.fullLines=s.fullLines||[];s.fullLines.push({p1:bA,p2:bB});}
+
+      // Second object from a foot on base
+      const footX=0, footY=0;
+      const rad=d2r(angle);
+      const len=halfW*0.7;
+      const dA=P(footX, footY, drawnObj.label[0]||'C');
+      const dB=P(footX+len*cos(rad), footY-len*sin(rad), drawnObj.label[1]||'D');
+      s.lines.push([dA,dB]);
+      if(drawnObj.kind==='segment'){
+        const segKey=drawnObj.label;
+        if(ctx.segments[segKey])s.dims.push({p1:dA,p2:dB,text:fmtNum(ctx.segments[segKey])});
+      }
+      if(betweenAngle) s.angleMarks.push({v:dA, d1:bB, d2:dB, label:fmtNum(betweenAngle)+'°'});
+      if(angle===90) s.rightAngles.push({v:dA,d1:bA,d2:dB});
+      return s;
+    }
+
+    // ── CASE: simple list of independent lines/segments (no angle relation) ──
     const count=max(objs.length,1);
-    const spacing=8;           // расстояние между прямыми
-    const halfW=16;            // полуширина в единицах
-    // Угол наклона для каждого объекта: немного разный чтобы не сливались
-    const angles=[0, 15, -15, 30, -30, 10, -10, 25, -25, 5];
+    const spacing=8;
+    const fallbackAngles=[0, 20, -15, 30, -25, 10, -10, 35, -30, 5];
+    // Map: lineLabel → {A, B} endpoints for placing points-on-line
+    const lineEndpoints={};
     objs.forEach((obj,i)=>{
       const yOff=(i-(count-1)/2)*spacing;
-      const angleDeg=count===1?0:angles[i%angles.length];
+      const angleDeg=count===1?0:fallbackAngles[i%fallbackAngles.length];
       const rad=d2r(angleDeg);
       const dx=halfW*cos(rad), dy=halfW*sin(rad);
-      // Базовая точка
       const cx=0, cy=yOff;
-      // Буквы точек
       const lA=obj.label[0]||String.fromCharCode(65+i*2);
       const lB=obj.label[1]||String.fromCharCode(66+i*2);
+      let endA, endB;
       if(obj.kind==='segment'){
-        // Отрезок: конечные точки с метками
-        const A=P(cx-dx, cy-dy, lA);
-        const B=P(cx+dx, cy+dy, lB);
-        s.lines.push([A,B]);
-        // Длина если задана
+        endA=P(cx-dx,cy-dy,lA); endB=P(cx+dx,cy+dy,lB);
+        s.lines.push([endA,endB]);
         const segKey=obj.label||lA+lB;
-        if(ctx.segments[segKey])s.dims.push({p1:A,p2:B,text:fmtNum(ctx.segments[segKey])});
+        if(ctx.segments[segKey])s.dims.push({p1:endA,p2:endB,text:fmtNum(ctx.segments[segKey])});
       } else if(obj.kind==='ray'){
-        // Луч: начало с меткой, конец — стрелка (сохраняем как ray для рендера)
-        const A=P(cx-dx, cy-dy, lA);
-        const B=P(cx+dx*1.5, cy+dy*1.5, ''); // конец без метки
-        s.lines.push([A,B]);
-        s.rays=s.rays||[];
-        s.rays.push({from:A,to:B});
-        P(cx-dx, cy-dy, lA); // точка начала
+        endA=P(cx-dx,cy-dy,lA); endB=P(cx+dx*1.5,cy+dy*1.5,'');
+        s.lines.push([endA,endB]);
+        s.rays=s.rays||[]; s.rays.push({from:endA,to:endB});
       } else {
-        // Прямая: продлеваем в обе стороны, стрелки на концах
-        const A=P(cx-dx*1.4, cy-dy*1.4, lA);
-        const B=P(cx+dx*1.4, cy+dy*1.4, lB);
-        s.lines.push([A,B]);
-        s.fullLines=s.fullLines||[];
-        s.fullLines.push({p1:A,p2:B});
+        endA=P(cx-dx*1.4,cy-dy*1.4,lA); endB=P(cx+dx*1.4,cy+dy*1.4,lB);
+        s.lines.push([endA,endB]);
+        s.fullLines=s.fullLines||[]; s.fullLines.push({p1:endA,p2:endB});
       }
+      if(obj.label) lineEndpoints[obj.label]={A:endA,B:endB};
     });
-    // Если ничего не распарсилось — одна горизонтальная прямая
     if(!objs.length){
       const A=P(-halfW,0,'A'), B=P(halfW,0,'B');
-      s.lines.push([A,B]);
-      s.fullLines=s.fullLines||[];
-      s.fullLines.push({p1:A,p2:B});
+      s.lines.push([A,B]); s.fullLines=s.fullLines||[]; s.fullLines.push({p1:A,p2:B});
+      lineEndpoints['AB']={A,B};
+    }
+
+    // ── Place points that lie on lines ─────────────────────────────────────
+    for(const pol of (ctx.pointsOnLine||[])){
+      const ep=lineEndpoints[pol.line];
+      if(!ep) continue;
+      const {A,B}=ep;
+      // Position: midpoint for midpoint mark, else 1/3 from start
+      const t=pol.isMid ? 0.5 : 0.35;
+      const px=A.x+(B.x-A.x)*t;
+      const py=A.y+(B.y-A.y)*t;
+      const pt=P(px,py,pol.point);
+      // If midpoint, add equal segment marks
+      if(pol.isMid){
+        const midPt=pt;
+        s.equalMarks.push([[A,midPt],[midPt,B]]);
+      }
     }
     return s;
   }
@@ -2387,13 +2552,15 @@ const GEO_KEYWORDS=['треугольник','трапеци','параллел�
   'окружность','круг','радиус','диаметр','хорда','касательн','секущ',
   'высота','медиана','биссектрис','диагональ','перпендикуляр','серединн',
   'вписан','описан','угол','градус','сторон','основани','периметр','площадь',
-  'отрезок','точка','центр','вершин','гипотенуза','катет',
-  'равнобедренн','равностороnn','тупоугольн','остроугольн','параллельн'];
+  'отрезок','прямая','прямую','прямой','прямые','луч','точка','центр','вершин','гипотенуза','катет',
+  'равнобедренн','тупоугольн','остроугольн','параллельн','пересека','проведен','лежит'];
 function hasGeoContent(text){
   const tl=text.toLowerCase();
   if(GEO_KEYWORDS.some(k=>tl.includes(k)))return true;
   if(/[a-z]{2}\s*=\s*\d/.test(tl))return true;
   if(/=\s*\d+\s*°/.test(tl))return true;
+  // Two capital letters = a point/segment label (e.g. "прямая AS", "отрезок KP")
+  if(/[A-Z]{2}/.test(text))return true;
   return false;
 }
 
