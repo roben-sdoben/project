@@ -288,7 +288,7 @@ function grabNum(s){
   return m2?parseFloat(m2[1].replace(',','.')):null;
 }
 
-function detectFeatures(tl){
+function detectFeatures(tl,clean){if(!clean)clean=tl;
   const F=new Set();
   const S={tangent:['касательн'],secant:['секущ'],chord:['хорд'],circle:['окружност'],
     radius:['радиус'],diameter:['диаметр'],triangle:['треугольник'],trapezoid:['трапеци'],
@@ -354,7 +354,7 @@ function parse(text){
     sides:{},diag1:null,diag2:null,perimeter:null,baseA:null,baseB:null};
 
   // ===== 1. DETECT FEATURES FIRST (needed for vertex assignment) =====
-  ctx.features=detectFeatures(tl);
+  ctx.features=detectFeatures(tl,clean);
   const F=ctx.features,has=f=>F.includes(f);
 
   // ===== 2. AUTO-ASSIGN VERTICES if not explicitly given =====
