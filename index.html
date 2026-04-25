@@ -188,7 +188,12 @@ const EXAMPLES=[
 {t:"Равноб. трапеция по основаниям и периметру",s:"Основания равнобедренной трапеции ABCD равны 8 и 18, а периметр равен 56. Найдите площадь трапеции."},
 {t:"Отрезок середин диагоналей трапеции",s:"Основания трапеции ABCD равны 9 и 15. Найдите отрезок соединяющий середины диагоналей трапеции."},
 {t:"Биссектрисы пар-мма на BC, BC=40",s:"Биссектрисы углов A и D параллелограмма ABCD пересекаются в точке лежащей на стороне BC. Найдите AB если BC = 40."},
-{t:"Ромб: расст. до стороны 19, d=76",s:"Расстояние от точки пересечения диагоналей ромба до одной из его сторон равно 19, а одна из диагоналей ромба равна 76. Найдите углы ромба."},
+{t:"Ромб: высота из угла B",s:"Ромб ABCD со стороной 10 и углом A = 60°. Из вершины B проведена высота BH на сторону AD."},
+{t:"Ромб: высота из угла A",s:"Ромб ABCD со стороной 8 и углом A = 120°. Из вершины A проведена высота AH на сторону CD."},
+{t:"Ромб: медиана (средняя линия)",s:"Ромб ABCD со стороной 6 и углом A = 60°. Проведена медиана MN, соединяющая середины сторон AB и CD."},
+{t:"Ромб: биссектриса угла A",s:"Ромб ABCD со стороной 8 и углом A = 60°. Проведена биссектриса угла A."},
+{t:"Ромб: биссектриса угла B",s:"Ромб ABCD со стороной 10 и углом B = 120°. Проведена биссектриса угла B."},
+
 {t:"Ромб: высота делит сторону",s:"Высота AH ромба ABCD делит сторону CD на отрезки DH = 21 и CH = 8. Найдите высоту ромба."},
 {t:"Биссектрисы трапеции при стороне AB",s:"Биссектрисы углов A и B при боковой стороне AB трапеции ABCD пересекаются в точке F. Найдите AB если AF = 24, BF = 32."},
 {t:"Прямоугольник: P=56, d=27",s:"Периметр прямоугольника равен 56, а диагональ равна 27. Найдите площадь этого прямоугольника."},
@@ -604,6 +609,14 @@ function parse(text){
     const m=clean.match(/провед[а-яё]+\s+(?:прям[а-яё]*|отрезо[а-яё]*|луч[а-яё]*)\s+([A-Z]{2})\s+к\s+(?:прям[а-яё]+|отрезк[а-яё]*)\s+([A-Z]{2})/i);
     if(m) ctx.lineFrom={base:m[2].toUpperCase(), drawn:m[1].toUpperCase()};
   }
+  // Parse "XY пересекает ZW [под углом N]" — two intersecting lines
+  {const m=clean.match(/([A-Z]{2})\s+пересекает\s+([A-Z]{2})/i);
+   if(m){
+     const l1=m[1].toUpperCase(), l2=m[2].toUpperCase();
+     if(!ctx.lineObjects.find(o=>o.label===l1)) ctx.lineObjects.push({kind:'line',label:l1});
+     if(!ctx.lineObjects.find(o=>o.label===l2)) ctx.lineObjects.push({kind:'line',label:l2});
+     ctx.intersectPair=[l1,l2];
+   }}
   // Parse "XY параллельна ZW" / "XY параллельно ZW" — bare segment labels
   {const m=clean.match(/([A-Z]{2})\s+параллельн[а-яёa-z]*\s+([A-Z]{2})/i);
    if(m){
@@ -620,6 +633,44 @@ function parse(text){
      if(!ctx.lineObjects.find(o=>o.label===l2)) ctx.lineObjects.push({kind:'line',label:l2});
      ctx.lineAngle=90; ctx.lineFrom={base:l2,drawn:l1};
    }}
+  // ===== 7c. PARSE "through point" lines =====
+  // "через точку K проведена прямая MN" / "через K проведён отрезок MN"
+  ctx.linesThrough=ctx.linesThrough||[];
+  {// "через точку X проведен[а] прямая/отрезок YZ [под углом N]"
+   for(const m of clean.matchAll(/через\s+точк[а-яёa-z]*\s+([A-Z])\s+провед[а-яёa-z]*\s+(?:прям[а-яёa-z]*|отрезо[а-яёa-z]*|луч[а-яёa-z]*)\s*([A-Z]{2})?(?:\s+под\s+углом\s+(\d+(?:[.,]\d+)?)\s*°?)?/gi)){
+     const pt=m[1].toUpperCase();
+     const isSegment=/отрезо[а-яёa-z]*/i.test(m[0]);
+     const isRay=/луч[а-яёa-z]*/i.test(m[0]);
+     const kind=isRay?'ray':isSegment?'segment':'line';
+     const label=(m[2]||'').toUpperCase();
+     const angle=m[3]?parseFloat(m[3].replace(',','.')):(ctx.lineAngle||null);
+     ctx.linesThrough.push({through:[pt], kind, label, angle});
+   }}
+  {// "через точки X и Y проведена прямая/отрезок ZW"
+   for(const m of clean.matchAll(/через\s+точк[а-яёa-z]*\s+([A-Z])\s+и\s+([A-Z])\s+провед[а-яёa-z]*\s+(?:прям[а-яёa-z]*|отрезо[а-яёa-z]*|луч[а-яёa-z]*)\s*([A-Z]{2})?/gi)){
+     const pt1=m[1].toUpperCase(), pt2=m[2].toUpperCase();
+     const isSegment=/отрезо[а-яёa-z]*/i.test(m[0]);
+     const kind=isSegment?'segment':'line';
+     const label=(m[3]||'').toUpperCase();
+     ctx.linesThrough.push({through:[pt1,pt2], kind, label});
+   }}
+  {// "через X и Y проведена прямая ZW [под углом N]" (two points, no "точку")
+   for(const m of clean.matchAll(/через\s+(?:точк[а-яёa-z]*\s+)?([A-Z])\s+и\s+([A-Z])\s+провед[а-яёa-z]*\s+(?:прям[а-яёa-z]*|отрезо[а-яёa-z]*|луч[а-яёa-z]*)\s*([A-Z]{2})?(?:\s+под\s+углом\s+(\d+(?:[.,]\d+)?)\s*°?)?/gi)){
+     const pt1=m[1].toUpperCase(), pt2=m[2].toUpperCase();
+     const isSegment=/отрезо[а-яёa-z]*/i.test(m[0]);
+     const kind=isSegment?'segment':'line';
+     const label=(m[3]||'').toUpperCase();
+     const angle=m[4]?parseFloat(m[4].replace(',','.')):(ctx.lineAngle||null);
+     if(!ctx.linesThrough.find(lt=>lt.through.includes(pt1)&&lt.through.includes(pt2)))
+       ctx.linesThrough.push({through:[pt1,pt2], kind, label, angle});
+   }}
+  {// "через неё/него проведена прямая MN" — anaphora single point
+   for(const m of clean.matchAll(/через\s+(?:неё|него|нее)\s+провед[а-яёa-z]*\s+(?:прям[а-яёa-z]*|отрезо[а-яёa-z]*|луч[а-яёa-z]*)\s*([A-Z]{2})?/gi)){
+     const label=(m[1]||'').toUpperCase();
+     ctx.linesThrough.push({through:['__last__'], kind:'line', label, anaphora:true});
+   }}
+  // [через них resolved after pointsOnLine — see below]
+
   // Parse "точка P лежит на RK" / "точка P на отрезке RK" / "P — точка на AB"
   ctx.pointsOnLine=ctx.pointsOnLine||[];
   {// Pattern 1: "точка X лежит на YZ" / "точка X на YZ"
@@ -636,6 +687,38 @@ function parse(text){
   {// Pattern 4: "середина AB" → midpoint
    const m=clean.match(/([A-Z])\s*(?:—|-)?\s*середин[а-яёa-z]*\s+([A-Z]{2})/i);
    if(m) ctx.pointsOnLine.push({point:m[1].toUpperCase(), line:m[2].toUpperCase(), isMid:true});}
+  {// Pattern 5: "точки X и Y лежат на CD и AB соответственно"
+   const m=clean.match(/точк[а-яёa-z]*\s+([A-Z])\s+и\s+([A-Z])\s+леж[а-яёa-z]*\s+на\s+([A-Z]{2})\s+и\s+([A-Z]{2})/i);
+   if(m){
+     if(!ctx.pointsOnLine.find(p=>p.point===m[1].toUpperCase()))
+       ctx.pointsOnLine.push({point:m[1].toUpperCase(), line:m[3].toUpperCase()});
+     if(!ctx.pointsOnLine.find(p=>p.point===m[2].toUpperCase()))
+       ctx.pointsOnLine.push({point:m[2].toUpperCase(), line:m[4].toUpperCase()});
+   }}
+  {// Pattern 6: "точки X и Y лежат на них соответственно" — anaphora for parallelPair
+   const m=clean.match(/точк[а-яёa-z]*\s+([A-Z])\s+и\s+([A-Z])\s+леж[а-яёa-z]*\s+на\s+(?:них|этих\s+прям[а-яёa-z]*|прям[а-яёa-z]*\s+соответственно)/i);
+   if(m&&ctx.parallelPair&&ctx.parallelPair.length>=2){
+     const pt1=m[1].toUpperCase(), pt2=m[2].toUpperCase();
+     if(!ctx.pointsOnLine.find(p=>p.point===pt1))
+       ctx.pointsOnLine.push({point:pt1, line:ctx.parallelPair[0]});
+     if(!ctx.pointsOnLine.find(p=>p.point===pt2))
+       ctx.pointsOnLine.push({point:pt2, line:ctx.parallelPair[1]});
+   }}
+  {// Pattern 7: "X лежит на ней" / "X лежит на одной из них" — anaphora single line
+   const m=clean.match(/([A-Z])\s+лежит\s+на\s+(?:ней|одной\s+из\s+них)/i);
+   if(m&&ctx.parallelPair&&!ctx.pointsOnLine.find(p=>p.point===m[1].toUpperCase()))
+     ctx.pointsOnLine.push({point:m[1].toUpperCase(), line:ctx.parallelPair[1]});
+  }
+  // ── "через них проведена прямая" — resolve AFTER pointsOnLine is known ──
+  {for(const m of clean.matchAll(/через\s+(?:них|них\s+всех)\s+провед[а-яёa-z]*\s+(?:прям[а-яёa-z]*|отрезо[а-яёa-z]*|луч[а-яёa-z]*)\s*([A-Z]{2})?/gi)){
+     const label=(m[1]||'').toUpperCase();
+     const allPts=(ctx.pointsOnLine||[]).map(p=>p.point);
+     if(allPts.length>=2)
+       ctx.linesThrough.push({through:allPts.slice(0,2), kind:'line', label, anaphora:true});
+     else if(allPts.length===1)
+       ctx.linesThrough.push({through:[allPts[0]], kind:'line', label, anaphora:true});
+  }}
+
   // Auto-add the line objects referenced by pointsOnLine
   for(const pol of ctx.pointsOnLine){
     if(!ctx.lineObjects.find(o=>o.label===pol.line)){
@@ -655,8 +738,14 @@ function parse(text){
 
   // ===== 8. SCENARIO CLASSIFICATION =====
   if(has('circle')){
+    // --- Четырёхугольник + окружность (вписанная/описанная) — высший приоритет ---
+    if(has('rhombus')&&(has('incircle')||has('circumcircle')||has('inscribed')||has('circumscribed')))ctx.scenario='rhombus';
+    else if(has('square')&&(has('incircle')||has('circumcircle')||has('inscribed')||has('circumscribed')))ctx.scenario='square';
+    else if(has('trapezoid')&&(has('incircle')||has('circumcircle')||has('inscribed')||has('circumscribed')))ctx.scenario='trapezoid';
+    else if(has('parallelogram')&&(has('incircle')||has('circumcircle')||has('inscribed')||has('circumscribed')))ctx.scenario='parallelogram';
+    else if(has('rectangle')&&(has('incircle')||has('circumcircle')||has('inscribed')||has('circumscribed')))ctx.scenario='rectangle';
     // --- Triangle + circle combinations first (highest priority) ---
-    if(has('center_on_side')&&has('triangle'))ctx.scenario='circle_on_side_tangent';
+    else if(has('center_on_side')&&has('triangle'))ctx.scenario='circle_on_side_tangent';
     else if(has('triangle')&&has('tangent')&&has('passes_through'))ctx.scenario='circle_on_side_tangent';
     else if(has('triangle')&&has('diameter')&&has('height'))ctx.scenario='right_tri_height_circle';
     else if(has('triangle')&&has('incircle'))ctx.scenario='tri_incircle';
@@ -1551,24 +1640,205 @@ function solve(ctx){
     // ── CASE: two parallel lines (e.g. "LK параллельна BA") ───────────────
     if(ctx.parallelPair){
       const [l1,l2]=ctx.parallelPair;
-      // Ensure we have two line objects with these labels
-      const ensureObj=(lbl,i)=>{
-        const found=objs.find(o=>o.label===lbl);
-        return found||{kind:'line',label:lbl};
-      };
-      const obj1=ensureObj(l1,0), obj2=ensureObj(l2,1);
+      const ensureObj=(lbl)=>objs.find(o=>o.label===lbl)||{kind:'line',label:lbl};
+      const obj1=ensureObj(l1), obj2=ensureObj(l2);
       const gap=9;
+      const lineEndpointsP={};
       [[obj1,-gap/2],[obj2,gap/2]].forEach(([obj,yOff],i)=>{
         const lA=obj.label[0]||String.fromCharCode(65+i*2);
         const lB=obj.label[1]||String.fromCharCode(66+i*2);
         const A=P(-halfW,yOff,lA), B=P(halfW,yOff,lB);
         s.lines.push([A,B]);
         s.fullLines=s.fullLines||[]; s.fullLines.push({p1:A,p2:B});
+        lineEndpointsP[obj.label]={A,B};
       });
       // Parallel tick marks
       const pA=s.lines[0][0], pB=s.lines[0][1];
       const pC=s.lines[1][0], pD=s.lines[1][1];
       s.equalMarks.push([[pA,pB],[pC,pD]]);
+
+      // ── Draw transversal line(s) cutting the parallel lines ───────────────
+      // Collect transversal objects: those NOT in the parallel pair
+      const transversals = objs.filter(o => o.label !== l1 && o.label !== l2);
+
+      // Also check ctx.intersectPair — the transversal may be named there
+      if(!transversals.length && ctx.intersectPair){
+        const [ip1,ip2]=ctx.intersectPair;
+        const trLabel=[ip1,ip2].find(l=>l!==l1&&l!==l2);
+        if(trLabel && !objs.find(o=>o.label===trLabel))
+          transversals.push({kind:'line', label:trLabel});
+      }
+
+      // Raw angle from text — use as-is (user's angle, e.g. 98°)
+      const rawAngle = betweenAngle || ctx.lineAngle || 60;
+      // Use the raw angle directly for drawing (don't convert to acute)
+      // If > 90, the transversal leans the other way
+      const drawAngle = rawAngle <= 90 ? rawAngle : 180 - rawAngle;
+      const leansLeft = rawAngle > 90; // if obtuse, transversal leans left
+
+      const y1 = s.lines[0][0].y;  // y of first parallel
+      const y2 = s.lines[1][0].y;  // y of second parallel
+      const transGap = Math.abs(y2 - y1);
+
+      transversals.forEach((tr, ti) => {
+        const lbl = tr.label || '';
+        const rad = d2r(drawAngle);
+        const tdx = (leansLeft ? -1 : 1) * Math.cos(rad);
+        const tdy = -Math.sin(rad); // negative = upward in screen coords
+
+        // Intersection with first parallel (upper line, smaller y)
+        const ix1 = -1 + ti * 3;
+        const iy1 = y1;
+        // Intersection with second parallel: move along transversal until y=y2
+        const tParam = (y2 - iy1) / tdy;
+        const ix2 = ix1 + tdx * tParam;
+        const iy2 = y2;
+
+        // Extend beyond each parallel by the full inter-parallel gap (so transversal looks long enough)
+        const extSteps = transGap * 1.1; // how far to extend (in "t" units along transversal)
+        // Unit vector along transversal
+        const tLen = Math.hypot(tdx, tdy) || 1;
+        const ux = tdx / tLen, uy = tdy / tLen;
+
+        // ptA = above upper parallel (extend in -direction from K1)
+        const tAx = ix1 - ux * extSteps;
+        const tAy = iy1 - uy * extSteps;
+        // ptB = below lower parallel (extend in +direction from K2)
+        const tBx = ix2 + ux * extSteps;
+        const tBy = iy2 + uy * extSteps;
+
+        // Label: first letter of name goes on the upper end (smaller y = top of screen)
+        // tAy < tBy always (tAy is the top), so lbl[0] → top, lbl[1] → bottom
+        const topLbl  = lbl[0] || '';
+        const botLbl  = lbl[1] || '';
+        const ptA = P(tAx, tAy, topLbl);
+        const ptB = P(tBx, tBy, botLbl);
+        s.lines.push([ptA, ptB]);
+        s.fullLines = s.fullLines || [];
+        s.fullLines.push({p1: ptA, p2: ptB});
+
+        // Intersection points — for angle marks
+        const K1 = {x: ix1, y: iy1, label: ''};
+        const K2 = {x: ix2, y: iy2, label: ''};
+
+        if(rawAngle === 90){
+          s.rightAngles.push({v: K1, d1: s.lines[0][0], d2: ptA});
+          s.rightAngles.push({v: K2, d1: s.lines[1][0], d2: ptB});
+        } else {
+          const suppAngle = 180 - rawAngle;
+          // At upper intersection K1: rawAngle between rightward line and downward transversal
+          s.angleMarks.push({
+            v: K1,
+            d1: {x: K1.x + 1,  y: K1.y},
+            d2: {x: K1.x + ux, y: K1.y - uy}, // downward = away from ptA
+            label: fmtNum(rawAngle) + '°'
+          });
+          s.angleMarks.push({
+            v: K1,
+            d1: {x: K1.x - 1,  y: K1.y},
+            d2: {x: K1.x + ux, y: K1.y - uy},
+            label: fmtNum(suppAngle) + '°'
+          });
+          // At lower intersection K2
+          s.angleMarks.push({
+            v: K2,
+            d1: {x: K2.x + 1,  y: K2.y},
+            d2: {x: K2.x - ux, y: K2.y + uy}, // upward = toward K1
+            label: fmtNum(rawAngle) + '°'
+          });
+          s.angleMarks.push({
+            v: K2,
+            d1: {x: K2.x - 1,  y: K2.y},
+            d2: {x: K2.x - ux, y: K2.y + uy},
+            label: fmtNum(suppAngle) + '°'
+          });
+        }
+      });
+
+      // If no explicit transversal found but angle given — draw one with default label
+      if(!transversals.length && rawAngle){
+        const rad = d2r(drawAngle);
+        const tdx = (leansLeft ? -1:1)*Math.cos(rad), tdy=-Math.sin(rad);
+        const ix1=0, iy1=y1;
+        const tParam=(y2-iy1)/tdy;
+        const ix2=ix1+tdx*tParam, iy2_=y2;
+        const gap2=Math.abs(y2-y1);
+        const ext2=gap2*0.9/Math.sin(rad);
+        const ptA=P(ix1-tdx*ext2, iy1-tdy*ext2,'');
+        const ptB=P(ix2+tdx*ext2, iy2_+tdy*ext2,'');
+        s.lines.push([ptA,ptB]);
+        s.fullLines=s.fullLines||[];s.fullLines.push({p1:ptA,p2:ptB});
+      }
+
+      // ── Place points on lines ──────────────────────────────────────────────
+      const resolvedPoints={};
+      // Use different t positions so points on different lines don't look identical
+      const tPositions=[0.35, 0.58, 0.42, 0.65];
+      let tIdx=0;
+      for(const pol of (ctx.pointsOnLine||[])){
+        const ep=lineEndpointsP[pol.line]; if(!ep) continue;
+        const {A,B}=ep;
+        const t=pol.isMid?0.5:tPositions[tIdx++%tPositions.length];
+        const px=A.x+(B.x-A.x)*t, py=A.y+(B.y-A.y)*t;
+        const pt=P(px,py,pol.point);
+        resolvedPoints[pol.point]={x:px,y:py};
+        if(pol.isMid) s.equalMarks.push([[A,pt],[pt,B]]);
+      }
+
+      // ── Draw lines/segments through points ────────────────────────────────
+      for(const lt of (ctx.linesThrough||[])){
+        let pts=lt.through.map(lbl=>{
+          if(lbl==='__last__'){
+            const last=ctx.pointsOnLine&&ctx.pointsOnLine[ctx.pointsOnLine.length-1];
+            return last?resolvedPoints[last.point]||s.points[last.point]:null;
+          }
+          return resolvedPoints[lbl]||s.points[lbl]||null;
+        });
+
+        // Resolve unregistered through-points: place them on the relevant parallel line
+        pts=pts.map((pt,i)=>{
+          if(pt) return pt;
+          const lbl=lt.through[i]; if(!lbl||lbl==='__last__') return null;
+          // Find which parallel line this point is assigned to via pointsOnLine
+          const polEntry=(ctx.pointsOnLine||[]).find(p=>p.point===lbl);
+          const targetLine=polEntry?polEntry.line:(ctx.parallelPair?ctx.parallelPair[i%2]:null);
+          const ep=targetLine?lineEndpointsP[targetLine]:null;
+          if(ep){
+            const t=0.38;
+            const x=ep.A.x+(ep.B.x-ep.A.x)*t, y=ep.A.y+(ep.B.y-ep.A.y)*t;
+            const created=P(x,y,lbl);
+            resolvedPoints[lbl]={x,y};
+            return created;
+          }
+          return null;
+        }).filter(Boolean);
+
+        if(!pts.length) continue;
+        const anchor=pts[0];
+        let dx=1,dy=0;
+        if(pts.length>=2){
+          dx=pts[1].x-pts[0].x; dy=pts[1].y-pts[0].y;
+          const len=Math.hypot(dx,dy)||1; dx/=len; dy/=len;
+        } else {
+          const angDeg=lt.angle!=null?lt.angle:60;
+          const ang=d2r(angDeg); dx=cos(ang); dy=-sin(ang);
+        }
+        const ext=halfW*1.1;
+        const lbl2=lt.label||'';
+        const lA_lbl=lbl2[0]||'';
+        const lB_lbl=lbl2[1]||'';
+        if(lt.kind==='segment'){
+          const ptA=P(anchor.x-dx*halfW*0.55,anchor.y-dy*halfW*0.55,lA_lbl);
+          const ptB=P(anchor.x+dx*halfW*0.55,anchor.y+dy*halfW*0.55,lB_lbl);
+          s.lines.push([ptA,ptB]);
+        } else {
+          const ptA=P(anchor.x-dx*ext,anchor.y-dy*ext,lA_lbl);
+          const ptB=P(anchor.x+dx*ext,anchor.y+dy*ext,lB_lbl);
+          s.lines.push([ptA,ptB]);
+          s.fullLines=s.fullLines||[]; s.fullLines.push({p1:ptA,p2:ptB});
+        }
+        if(lt.angle!=null&&pts.length<2){s.angleMarks=s.angleMarks||[];const dEnd={x:anchor.x+halfW*0.4,y:anchor.y};const ltEnd={x:anchor.x+dx*halfW*0.4,y:anchor.y+dy*halfW*0.4};s.angleMarks.push({v:{x:anchor.x,y:anchor.y},d1:dEnd,d2:ltEnd,label:lt.angle+'°'});}
+      }
       return s;
     }
 
@@ -1611,30 +1881,61 @@ function solve(ctx){
       return s;
     }
 
-    // ── CASE: two objects with angle between them (no explicit relation) ──
-    if(objs.length>=2 && betweenAngle){
-      const baseObj=objs[0], drawnObj=objs[1];
-      const angle=betweenAngle;
-
-      // Base: horizontal
-      const bA=P(-halfW, 0, baseObj.label[0]||'A');
-      const bB=P( halfW, 0, baseObj.label[1]||'B');
-      s.lines.push([bA,bB]);
-      if(baseObj.kind==='line'||!baseObj.kind){s.fullLines=s.fullLines||[];s.fullLines.push({p1:bA,p2:bB});}
-
-      // Second object from a foot on base
-      const footX=0, footY=0;
-      const rad=d2r(angle);
-      const len=halfW*0.7;
-      const dA=P(footX, footY, drawnObj.label[0]||'C');
-      const dB=P(footX+len*cos(rad), footY-len*sin(rad), drawnObj.label[1]||'D');
-      s.lines.push([dA,dB]);
-      if(drawnObj.kind==='segment'){
-        const segKey=drawnObj.label;
-        if(ctx.segments[segKey])s.dims.push({p1:dA,p2:dB,text:fmtNum(ctx.segments[segKey])});
+    // ── CASE: two intersecting lines ("DF пересекает HG под углом 60") ──────
+    if(ctx.intersectPair || (objs.length>=2 && betweenAngle && !lineFrom)){
+      const angle = betweenAngle || 60;
+      let obj1, obj2;
+      if(ctx.intersectPair){
+        const [l1,l2]=ctx.intersectPair;
+        obj1=objs.find(o=>o.label===l1)||{kind:'line',label:l1};
+        obj2=objs.find(o=>o.label===l2)||{kind:'line',label:l2};
+      } else {
+        obj1=objs[0]; obj2=objs[1];
       }
-      if(betweenAngle) s.angleMarks.push({v:dA, d1:bB, d2:dB, label:fmtNum(betweenAngle)+'°'});
-      if(angle===90) s.rightAngles.push({v:dA,d1:bA,d2:dB});
+
+      // Centre of intersection at origin
+      const ext = halfW * 0.85;
+      const rad = d2r(angle);
+
+      // Line 1: horizontal (base)
+      const l1A = P(-ext, 0, obj1.label[0]||'A');
+      const l1B = P( ext, 0, obj1.label[1]||'B');
+      s.lines.push([l1A, l1B]);
+      s.fullLines = s.fullLines||[]; s.fullLines.push({p1:l1A, p2:l1B});
+
+      // Line 2: at `angle` from line 1, crossing at origin
+      const dx2 = ext*cos(rad), dy2 = -ext*sin(rad);
+      const l2A = P(-dx2, dy2, obj2.label[0]||'C');
+      const l2B = P( dx2,-dy2, obj2.label[1]||'D');
+      s.lines.push([l2A, l2B]);
+      s.fullLines.push({p1:l2A, p2:l2B});
+
+      // Intersection point (at origin)
+      const iPt = {x:0, y:0, label:''};
+
+      // Angle marks at intersection — show both the given angle and its supplement
+      const suppAngle = 180 - angle;
+      const showAngle = angle <= 90 ? angle : suppAngle;
+      const showSupp  = 180 - showAngle;
+
+      if(angle === 90){
+        s.rightAngles.push({v:iPt, d1:l1A, d2:l2B});
+      } else {
+        // Acute angle mark (between right part of line1 and upper part of line2)
+        s.angleMarks.push({
+          v: iPt,
+          d1: {x: 1, y: 0},          // rightward along line1
+          d2: {x: dx2/ext, y:-dy2/ext}, // along line2 upward
+          label: fmtNum(showAngle)+'°'
+        });
+        // Supplementary angle mark (between left part of line1 and upper part of line2)
+        s.angleMarks.push({
+          v: iPt,
+          d1: {x:-1, y: 0},
+          d2: {x: dx2/ext, y:-dy2/ext},
+          label: fmtNum(showSupp)+'°'
+        });
+      }
       return s;
     }
 
@@ -1676,20 +1977,79 @@ function solve(ctx){
     }
 
     // ── Place points that lie on lines ─────────────────────────────────────
+    const resolvedPointsSimple={};
+    const tPosSimple=[0.32, 0.55, 0.42, 0.65, 0.25, 0.70];
+    let tIdxSimple=0;
     for(const pol of (ctx.pointsOnLine||[])){
       const ep=lineEndpoints[pol.line];
       if(!ep) continue;
       const {A,B}=ep;
-      // Position: midpoint for midpoint mark, else 1/3 from start
-      const t=pol.isMid ? 0.5 : 0.35;
+      const t=pol.isMid ? 0.5 : tPosSimple[tIdxSimple++%tPosSimple.length];
       const px=A.x+(B.x-A.x)*t;
       const py=A.y+(B.y-A.y)*t;
       const pt=P(px,py,pol.point);
-      // If midpoint, add equal segment marks
+      resolvedPointsSimple[pol.point]={x:px,y:py};
       if(pol.isMid){
         const midPt=pt;
         s.equalMarks.push([[A,midPt],[midPt,B]]);
       }
+    }
+
+    // ── Draw lines/segments through points ─────────────────────────────────
+    for(const lt of (ctx.linesThrough||[])){
+      // First resolve all "through" points
+      let pts=lt.through.map(lbl=>{
+        if(lbl==='__last__'){
+          const last=ctx.pointsOnLine&&ctx.pointsOnLine[ctx.pointsOnLine.length-1];
+          return last?resolvedPointsSimple[last.point]||s.points[last.point]:null;
+        }
+        return resolvedPointsSimple[lbl]||s.points[lbl]||null;
+      });
+
+      // If a "through" point is unresolved, place it on the named line (lt.label) at t=0.4
+      pts=pts.map((pt,i)=>{
+        if(pt) return pt;
+        const lbl=lt.through[i]; if(!lbl||lbl==='__last__') return null;
+        // Try to find the named line in lineEndpoints
+        const ep=lineEndpoints[lt.label];
+        if(ep){
+          const t=0.4;
+          const x=ep.A.x+(ep.B.x-ep.A.x)*t, y=ep.A.y+(ep.B.y-ep.A.y)*t;
+          const created=P(x,y,lbl);
+          resolvedPointsSimple[lbl]={x,y};
+          return created;
+        }
+        // Fallback: place at canvas centre with a slight offset
+        const created=P(-halfW*0.1,0,lbl);
+        resolvedPointsSimple[lbl]={x:-halfW*0.1,y:0};
+        return created;
+      }).filter(Boolean);
+
+      if(!pts.length) continue;
+      const anchor=pts[0];
+      let dx=1,dy=0;
+      if(pts.length>=2){
+        dx=pts[1].x-pts[0].x; dy=pts[1].y-pts[0].y;
+        const len=Math.hypot(dx,dy)||1; dx/=len; dy/=len;
+      } else {
+        const angDeg=lt.angle!=null?lt.angle:60;
+        const ang=d2r(angDeg); dx=cos(ang); dy=-sin(ang);
+      }
+      const ext=halfW*1.1;
+      const lbl2=lt.label||'';
+      const lA_lbl=lbl2[0]||'';
+      const lB_lbl=lbl2[1]||'';
+      if(lt.kind==='segment'){
+        const ptA=P(anchor.x-dx*halfW*0.55,anchor.y-dy*halfW*0.55,lA_lbl);
+        const ptB=P(anchor.x+dx*halfW*0.55,anchor.y+dy*halfW*0.55,lB_lbl);
+        s.lines.push([ptA,ptB]);
+      } else {
+        const ptA=P(anchor.x-dx*ext,anchor.y-dy*ext,lA_lbl);
+        const ptB=P(anchor.x+dx*ext,anchor.y+dy*ext,lB_lbl);
+        s.lines.push([ptA,ptB]);
+        s.fullLines=s.fullLines||[]; s.fullLines.push({p1:ptA,p2:ptB});
+      }
+      if(lt.angle!=null&&pts.length<2){s.angleMarks=s.angleMarks||[];const dEnd={x:anchor.x+halfW*0.4,y:anchor.y};const ltEnd={x:anchor.x+dx*halfW*0.4,y:anchor.y+dy*halfW*0.4};s.angleMarks.push({v:{x:anchor.x,y:anchor.y},d1:dEnd,d2:ltEnd,label:lt.angle+'°'});}
     }
     return s;
   }
@@ -1917,23 +2277,34 @@ function solve(ctx){
     if(isR)s.rightAngles.push({v:pa,d1:pd,d2:pb},{v:pb,d1:pa,d2:pc});
     if(isIso)s.equalMarks.push([[pa,pb],[pc,pd]]);
 
-    // Height line
+    // Height line — буквы из условия
     if(hasHt||ctx.heightSeg){
-      const hm=ctx.raw.match(/высот[а-яёa-z0-9]*\s+([A-Z])([A-Z])/i)||ctx.raw.match(/([A-Z])([A-Z])\s*[-—–]\s*высот/i);
-      const fromL=hm?hm[1].toUpperCase():C, footL=hm?hm[2].toUpperCase():'H';
-      const from=s.points[fromL];
+      const hm=ctx.raw.match(/высот[а-яёa-z0-9]*\s+([A-Za-z])([A-Za-z])/i)
+              ||ctx.raw.match(/([A-Za-z])([A-Za-z])\s*[-—–]\s*высот/i)
+              ||ctx.raw.match(/высот[а-яёa-z0-9]*\s+из\s+(?:вершины\s+)?([A-Za-z])/i);
+      const fromL = hm ? hm[1].toUpperCase() : C;
+      const footL = hm && hm[2] ? hm[2].toUpperCase() : 'H';
+      const from = s.points[fromL] || pb; // default: from top-left
       if(from){
-        const foot=P(from.x,0,footL);
-        s.dashed.push([from,foot]);
-        s.rightAngles.push({v:foot,d1:from,d2:pd});
+        const foot = P(from.x, 0, footL);
+        s.dashed.push([from, foot]);
+        s.rightAngles.push({v:foot, d1:from, d2:pd});
+        if(h) s.dims.push({p1:from, p2:foot, text:fmtNum(h)});
       }
     }
-    // Midline
-    if(hasMidline||ctx.midlineVal){
-      const mAB=mid(pa,pb),mCD=mid(pc,pd);
-      const pK=P(mAB.x,mAB.y,'K'),pM=P(mCD.x,mCD.y,'M');
-      s.dashed.push([pK,pM]);
-      s.dims.push({p1:pK,p2:pM,text:'ср.л.='+fmtNum(ctx.midlineVal||(ad+bc)/2)});
+    // Midline / Median — берём буквы из условия
+    const hasMedianQ = /медиан/i.test(ctx.tl)||hasMidline||ctx.midlineVal;
+    if(hasMedianQ){
+      // Ищем буквы: "медиана SH", "средняя линия MN"
+      const medM = ctx.raw.match(/(?:медиан|средн[а-яё]+\s+лини)[а-яё]*\s+([A-Za-z])([A-Za-z])/i);
+      const lM1 = medM ? medM[1].toUpperCase() : 'M';
+      const lM2 = medM ? medM[2].toUpperCase() : 'N';
+      const mAB=mid(pa,pb), mCD=mid(pc,pd);
+      const pM1=P(mAB.x,mAB.y,lM1), pM2=P(mCD.x,mCD.y,lM2);
+      s.dashed.push([pM1,pM2]);
+      s.equalMarks.push([[pa,pM1],[pM1,pb]],[[pc,pM2],[pM2,pd]]);
+      if(ctx.midlineVal) s.dims.push({p1:pM1,p2:pM2,text:fmtNum(ctx.midlineVal)});
+      else s.dims.push({p1:pM1,p2:pM2,text:fmtNum((ad+bc)/2)});
     }
     // Midpoint-of-diagonals segment
     if(hasMidDiagSeg){
@@ -1963,11 +2334,22 @@ function solve(ctx){
           if(bf)s.dims.push({p1:pF,p2:b2.vp,text:bisSide[1]+'F='+fmtNum(bf)});}
       }
     }
-    // Angles
+    // Angles — val может быть null (угол без числа → только дуга)
     for(const[lbl,val]of Object.entries(trapAngles)){
-      if(lbl.length===3){const v=lbl[1];if(s.points[v]&&s.points[lbl[0]]&&s.points[lbl[2]])s.angleMarks.push({v:s.points[v],d1:s.points[lbl[0]],d2:s.points[lbl[2]],label:val+'°'});}
-      else if(lbl.length===1&&s.points[lbl]){const vi=[A,B,C,D].indexOf(lbl);if(vi>=0){const prev=[A,B,C,D][(vi+3)%4],next=[A,B,C,D][(vi+1)%4];if(s.points[prev]&&s.points[next])s.angleMarks.push({v:s.points[lbl],d1:s.points[prev],d2:s.points[next],label:val+'°'});}}
+      const label = val!=null ? val+'°' : '';
+      if(lbl.length===3){const v=lbl[1];if(s.points[v]&&s.points[lbl[0]]&&s.points[lbl[2]])s.angleMarks.push({v:s.points[v],d1:s.points[lbl[0]],d2:s.points[lbl[2]],label});}
+      else if(lbl.length===1&&s.points[lbl]){const vi=[A,B,C,D].indexOf(lbl);if(vi>=0){const prev=[A,B,C,D][(vi+3)%4],next=[A,B,C,D][(vi+1)%4];if(s.points[prev]&&s.points[next])s.angleMarks.push({v:s.points[lbl],d1:s.points[prev],d2:s.points[next],label});}}
     }
+    // Углы вершин без явного значения — помечаем дугой если упомянуты
+    {const angM=ctx.raw.matchAll(/угол\s+([A-Z])(?!\s*=|\s*рав)/gi);
+    for(const m of angM){
+      const lbl=m[1];if(s.points[lbl]&&!trapAngles[lbl]){
+        const vi=[A,B,C,D].indexOf(lbl);
+        if(vi>=0){const prev=[A,B,C,D][(vi+3)%4],next=[A,B,C,D][(vi+1)%4];
+          if(s.points[prev]&&s.points[next])s.angleMarks.push({v:s.points[lbl],d1:s.points[prev],d2:s.points[next],label:''});
+        }
+      }
+    }}
     // Dimensions
     for(const seg in segs){const[l1,l2]=seg.split('');if(s.points[l1]&&s.points[l2])s.dims.push({p1:s.points[l1],p2:s.points[l2],text:fmtNum(segs[seg])});}
     if(!segs[A+D]&&!segs[D+A])s.dims.push({p1:pa,p2:pd,text:fmtNum(ad)});
@@ -2084,6 +2466,7 @@ function solve(ctx){
       const fH=footPerp(pO,pa,pb);const pH=P(fH.x,fH.y,'H');
       s.dashed.push([pO,pH]);s.rightAngles.push({v:pH,d1:pO,d2:pb});
       s.dims.push({p1:pO,p2:pH,text:fmtNum(distS)},{p1:pa,p2:pc,text:'d₁='+fmtNum(d1)});
+      addQuadExtra(ctx,s,[A,B,C,D]);
       return s;
     }
     // === Build from both diagonals ===
@@ -2102,6 +2485,7 @@ function solve(ctx){
       s.dashed.push([pa,pH]);s.rightAngles.push({v:pH,d1:pa,d2:pd_});
       s.dims.push({p1:pd_,p2:pH,text:'DH='+fmtNum(DH)},{p1:pH,p2:pc,text:'CH='+fmtNum(CH)});
       s.equalMarks.push([[pa,pb],[pb,pc],[pc,pd_],[pd_,pa]]);
+      addQuadExtra(ctx,s,[A,B,C,D]);
       return s;
     }
     // === Default build from side + angle ===
@@ -2128,6 +2512,7 @@ function solve(ctx){
       }
     }
     for(const seg in segs){const[l1,l2]=seg.split('');if(s.points[l1]&&s.points[l2])s.dims.push({p1:s.points[l1],p2:s.points[l2],text:fmtNum(segs[seg])});}
+    addQuadExtra(ctx,s,[A,B,C,D]);
     return s;
   }
 
@@ -2165,6 +2550,10 @@ function solve(ctx){
     for(const seg in segs){side=segs[seg];break;}
     const pa=P(0,0,A),pb=P(0,side,B),pc=P(side,side,C),pd=P(side,0,D);
     s.lines.push([pa,pb],[pb,pc],[pc,pd],[pd,pa]);
+    [[pa,pd,pb],[pb,pa,pc],[pc,pb,pd],[pd,pc,pa]].forEach(([v,d1_,d2_])=>s.rightAngles.push({v,d1:d1_,d2:d2_}));
+    s.equalMarks.push([[pa,pb],[pb,pc],[pc,pd],[pd,pa]]);
+    if(has('diagonal')){s.dashed.push([pa,pc],[pb,pd]);}
+    addQuadExtra(ctx,s,[A,B,C,D]);
     return s;
   }
 
@@ -2194,6 +2583,8 @@ function addQuadExtra(ctx, s, labs) {
   const pts = s.points;
   const tl = ctx.tl, raw = ctx.raw;
   const P = (x,y,l) => { const p={x,y,label:l}; if(l) s.points[l]=p; return p; };
+  const F = new Set(ctx.features||[]);
+  const has = f => F.has(f);
 
   const sides = [
     [A,B],[B,C],[C,D],[D,A]
@@ -2207,26 +2598,50 @@ function addQuadExtra(ctx, s, labs) {
     return {x:a.x+t*dx, y:a.y+t*dy};
   }
 
-  // --- Height in quad ---
+  // --- Height in quad — буквы пользователя ---
   if(ctx.features.includes('height') || /высот/.test(tl)) {
-    // try to find "высота XY" or "XY — высота" or "высота из X"
-    const hm = raw.match(/высот[а-яёa-z0-9]*\s+([A-Z])([A-Z])/i)
-             || raw.match(/([A-Z])([A-Z])\s*[-—–]\s*высот/i);
+    const hm = raw.match(/высот[а-яёa-z0-9]*\s+([A-Za-z])([A-Za-z])/i)
+             || raw.match(/([A-Za-z])([A-Za-z])\s*[-—–]\s*высот/i);
     let fromL = null, footL = null;
-    if(hm) { fromL = hm[1].toUpperCase(); footL = hm[2].toUpperCase(); }
+    if(hm) {
+      const c1 = hm[1].toUpperCase(), c2 = hm[2].toUpperCase();
+      // Если первая буква — вершина фигуры, это "высота XY" (X=from, Y=foot)
+      if(labs.includes(c1)) { fromL = c1; footL = labs.includes(c2) ? null : c2; }
+      else { fromL = c1; footL = c2; }
+    }
+    // "из угла D" / "из вершины D"
     if(!fromL) {
-      const hm2 = raw.match(/высот[а-яёa-z0-9]*\s+из\s+(?:вершины\s+)?([A-Z])/i);
+      const hm2 = raw.match(/из\s+(?:угл[а-яё]*|вершины)\s+([A-Za-z])/i);
       if(hm2) fromL = hm2[1].toUpperCase();
     }
-    if(!fromL) fromL = C; // default: from C in quadrilateral
-    if(!footL) footL = 'H';
-
+    // "проведена высота" — без явного указания откуда
+    if(!fromL) {
+      const hm3 = raw.match(/высот[а-яёa-z0-9]*\s+(?:угл[а-яё]*\s+)?([A-Za-z])\b/i);
+      if(hm3 && labs.includes(hm3[1].toUpperCase())) fromL = hm3[1].toUpperCase();
+    }
+    if(!fromL) fromL = labs[2] || C; // fallback: third vertex
+    // footL: если не задан явно или совпадает с вершиной, выбираем свободную букву
+    if(!footL || labs.includes(footL)) {
+      // Предпочитаем H, затем P, K, T, E
+      for(const cand of ['H','P','K','T','E','Q']) {
+        if(!labs.includes(cand) && !pts[cand]) { footL = cand; break; }
+      }
+    }
     const fromPt = pts[fromL];
-    if(fromPt && !pts[footL]) {
-      // find the opposite side (the side not containing fromL)
-      const oppSide = sides.find(([x,y]) => x!==fromL && y!==fromL);
-      if(oppSide) {
-        const a = pts[oppSide[0]], b = pts[oppSide[1]];
+    if(fromPt) {
+      // Найти сторону, на которую опускается высота:
+      // стороны, НЕ содержащие fromL, среди них — наиболее удалённая
+      const candidateSides = sides.filter(([x,y]) => x!==fromL && y!==fromL);
+      let bestSide = null, bestDist = -1;
+      for(const [x,y] of candidateSides) {
+        const a=pts[x], b=pts[y];
+        if(!a||!b) continue;
+        const f2 = foot(fromPt, a, b);
+        const d_ = Math.hypot(fromPt.x-f2.x, fromPt.y-f2.y);
+        if(d_ > bestDist) { bestDist=d_; bestSide=[x,y]; }
+      }
+      if(bestSide) {
+        const a = pts[bestSide[0]], b = pts[bestSide[1]];
         if(a && b) {
           const f = foot(fromPt, a, b);
           const H = P(f.x, f.y, footL);
@@ -2239,52 +2654,240 @@ function addQuadExtra(ctx, s, labs) {
 
   // --- Median in quad (connects midpoints of opposite sides) ---
   if(ctx.features.includes('median') || /медиан/.test(tl)) {
-    // "медиана KM" or "средняя линия" -- for quad, median = midline between two sides
-    const mm = raw.match(/медиан[а-яёa-z0-9]*\s+([A-Z])([A-Z])/i);
-    let p1L = null, p2L = null;
-    if(mm) { p1L = mm[1].toUpperCase(); p2L = mm[2].toUpperCase(); }
+    // "медиана KM" / "медиана SH" — буквы пользователя
+    const mm = raw.match(/медиан[а-яёa-z0-9]*\s+([A-Za-z])([A-Za-z])/i)
+             || raw.match(/средн[а-яёa-z0-9]*\s+лини[а-яёa-z0-9]*\s+([A-Za-z])([A-Za-z])/i);
+    let p1L = mm ? mm[1].toUpperCase() : null;
+    let p2L = mm ? mm[2].toUpperCase() : null;
     if(!p1L) { p1L = 'M'; p2L = 'N'; }
     if(!pts[p1L] && !pts[p2L]) {
-      // midpoints of AB and CD
       const a=pts[A],b=pts[B],c=pts[C],d=pts[D];
       if(a&&b&&c&&d) {
-        const m1 = P((a.x+b.x)/2,(a.y+b.y)/2,p1L);
-        const m2 = P((c.x+d.x)/2,(c.y+d.y)/2,p2L);
+        // Для ромба медиана = средняя линия параллельная стороне
+        // Определяем, параллельно какой паре сторон проводится (AB||CD или BC||AD)
+        // Средняя линия, параллельная AB и CD: середины BC и AD
+        const m1 = P((b.x+c.x)/2,(b.y+c.y)/2,p1L);
+        const m2 = P((a.x+d.x)/2,(a.y+d.y)/2,p2L);
         s.dashed.push([m1,m2]);
-        s.equalMarks.push([[a,m1],[m1,b]]);
-        s.equalMarks.push([[c,m2],[m2,d]]);
+        s.equalMarks.push([[b,m1],[m1,c]],[[a,m2],[m2,d]]);
+      }
+    }
+  }
+
+  // --- Углы вершин — рисуем дугу даже без числа ---
+  {const angRx = raw.matchAll(/угол\s+([A-Za-z])/gi);
+  for(const m of angRx){
+    const lbl=m[1].toUpperCase();
+    const vi=labs.indexOf(lbl);
+    if(vi>=0&&pts[lbl]){
+      const prev=labs[(vi+3)%4], next=labs[(vi+1)%4];
+      if(pts[prev]&&pts[next]){
+        // Ищем числовое значение
+        const numRx=new RegExp('угол\\s+'+lbl+'[^=\\d]*[=\\s]\\s*(\\d+(?:[.,]\\d+)?)','i');
+        const numM=raw.match(numRx);
+        const label=numM?numM[1]+'°':'';
+        s.angleMarks.push({v:pts[lbl],d1:pts[prev],d2:pts[next],label});
+      }
+    }
+  }}
+
+  // --- Биссектриса одиночная с буквами ---
+  if(/биссектрис/.test(tl)&&!(ctx.features.includes('two_bisectors'))) {
+    const bm = raw.match(/биссектрис[а-яёa-z0-9]*\s+(?:угл[а-яёa-z0-9]*\s+)?([A-Za-z])(?:\s+и\s+|\s*$|\s+[^A-Za-z])/i)
+             || raw.match(/биссектрис[а-яёa-z0-9]*\s+(?:из\s+)?(?:вершины\s+)?([A-Za-z])\s/i);
+    if(bm){
+      const fromL=bm[1].toUpperCase();
+      const idx=labs.indexOf(fromL);
+      if(idx>=0){
+        // Имя конечной точки биссектрисы
+        const endM=raw.match(new RegExp('биссектрис[а-яёa-z0-9]*\\s+'+fromL+'([A-Za-z])','i'))
+                 ||raw.match(new RegExp('биссектрис[а-яёa-z0-9]*[^.]*?([A-Za-z]{2})','i'));
+        const endL=endM?endM[1].toUpperCase():'K';
+        const pts4=labs.map(l=>pts[l]);
+        const bd=quadBisDir(idx,pts4,labs);
+        if(bd){
+          const oppSides=sides.filter(([x,y])=>x!==fromL&&y!==fromL);
+          let best=null,bestD=Infinity;
+          const end_={x:bd.vp.x+bd.x*1000,y:bd.vp.y+bd.y*1000};
+          for(const[sl1,sl2]of oppSides){
+            const ip=lineIntersect(bd.vp,end_,pts[sl1],pts[sl2]);
+            if(ip){const d_=Math.sqrt((ip.x-bd.vp.x)**2+(ip.y-bd.vp.y)**2);
+              if(d_>1&&d_<bestD){bestD=d_;best=ip;}}
+          }
+          if(best){const ep=P(best.x,best.y,endL);s.dashed.push([pts[fromL],ep]);}
+        }
+      }
+    }
+  }
+
+  // --- Вписанная окружность в четырёхугольник (incircle) ---
+  // Существует только если сумма противоположных сторон равна (ромб, квадрат, некоторые трапеции)
+  if(has('incircle') || /вписанн[а-яё]*\s+окружн|окружн[а-яё]*\s+вписан[^н]/i.test(raw)) {
+    const pa=pts[A],pb=pts[B],pc=pts[C],pd=pts[D];
+    if(pa&&pb&&pc&&pd) {
+      // Центр вписанной окружности — точка равноудалённая от всех сторон
+      // Для ромба и квадрата — это пересечение диагоналей
+      // Для трапеции — на оси симметрии, если равнобедренная
+      // Общий случай: находим через биссектрисы двух углов
+      function bisDir2(v, a_, b_) {
+        const da=dist(v,a_), db=dist(v,b_);
+        if(da<1e-9||db<1e-9) return null;
+        return {x:(a_.x-v.x)/da+(b_.x-v.x)/db, y:(a_.y-v.y)/da+(b_.y-v.y)/db};
+      }
+      const b1=bisDir2(pa,pd,pb);
+      const b2=bisDir2(pb,pa,pc);
+      let ic=null;
+      if(b1&&b2) {
+        const e1={x:pa.x+b1.x*1000,y:pa.y+b1.y*1000};
+        const e2={x:pb.x+b2.x*1000,y:pb.y+b2.y*1000};
+        ic=lineIntersect(pa,e1,pb,e2);
+      }
+      if(!ic) {
+        // Запасной вариант: центроид
+        ic={x:(pa.x+pb.x+pc.x+pd.x)/4, y:(pa.y+pb.y+pc.y+pd.y)/4};
+      }
+      // Радиус — расстояние от центра до стороны AB
+      function distPtLine(p, a_, b_) {
+        const dx=b_.x-a_.x, dy=b_.y-a_.y, len=Math.sqrt(dx*dx+dy*dy);
+        if(len<1e-9) return 0;
+        return Math.abs((p.x-a_.x)*dy-(p.y-a_.y)*dx)/len;
+      }
+      const ri = Math.min(
+        distPtLine(ic,pa,pb), distPtLine(ic,pb,pc),
+        distPtLine(ic,pc,pd), distPtLine(ic,pd,pa)
+      );
+      if(ri > 0.5) {
+        const iLabel = raw.match(/центр[а-яё]*\s+вписанн[а-яё]*\s+([A-Z])|вписанн[а-яё]*\s+окружн[а-яё]*\s+с\s+центром\s+([A-Z])/i);
+        const cl = (iLabel&&(iLabel[1]||iLabel[2]))||'O';
+        const Oi = P(ic.x, ic.y, cl);
+        s.circles.push({center:Oi, radius:ri});
+        // Точки касания на каждой стороне
+        function tangentPt(p, a_, b_) {
+          const dx=b_.x-a_.x,dy=b_.y-a_.y,len2=dx*dx+dy*dy;
+          const t=((p.x-a_.x)*dx+(p.y-a_.y)*dy)/len2;
+          return {x:a_.x+t*dx, y:a_.y+t*dy};
+        }
+        const t1=tangentPt(ic,pa,pb), t2=tangentPt(ic,pb,pc);
+        const t3=tangentPt(ic,pc,pd), t4=tangentPt(ic,pd,pa);
+        [t1,t2,t3,t4].forEach(t => s.dashed.push([Oi, {x:t.x,y:t.y,label:''}]));
+        // Прямые углы в точках касания
+        [
+          {v:{x:t1.x,y:t1.y,label:''},d1:Oi,d2:pa},
+          {v:{x:t2.x,y:t2.y,label:''},d1:Oi,d2:pb},
+          {v:{x:t3.x,y:t3.y,label:''},d1:Oi,d2:pc},
+          {v:{x:t4.x,y:t4.y,label:''},d1:Oi,d2:pd},
+        ].forEach(m => s.rightAngles.push(m));
+      }
+    }
+  }
+
+  // --- Описанная окружность вокруг четырёхугольника (circumcircle) ---
+  // Существует только если четырёхугольник вписан в окружность (сумма противоположных углов = 180°)
+  // Для квадрата, прямоугольника — всегда существует
+  if(has('circumcircle') || /описанн[а-яё]*\s+окружн|окружн[а-яё]*\s+описан/i.test(raw)) {
+    const pa=pts[A],pb=pts[B],pc=pts[C],pd=pts[D];
+    if(pa&&pb&&pc&&pd) {
+      // Описанная окружность: находим через описанную окружность треугольника ABC
+      // и проверяем что D тоже лежит (или берём центроид как приближение)
+      function circumcenter(p1,p2,p3) {
+        const ax=p1.x,ay=p1.y,bx=p2.x,by=p2.y,cx=p3.x,cy=p3.y;
+        const D_=2*(ax*(by-cy)+bx*(cy-ay)+cx*(ay-by));
+        if(Math.abs(D_)<1e-9) return null;
+        const ux=((ax*ax+ay*ay)*(by-cy)+(bx*bx+by*by)*(cy-ay)+(cx*cx+cy*cy)*(ay-by))/D_;
+        const uy=((ax*ax+ay*ay)*(cx-bx)+(bx*bx+by*by)*(ax-cx)+(cx*cx+cy*cy)*(bx-ax))/D_;
+        return {x:ux,y:uy};
+      }
+      let cc = circumcenter(pa,pb,pc);
+      if(!cc) cc={x:(pa.x+pb.x+pc.x+pd.x)/4, y:(pa.y+pb.y+pc.y+pd.y)/4};
+      // Если D не лежит на окружности — используем усреднённый центр
+      const rA=dist(cc,pa), rD=dist(cc,pd);
+      let rc;
+      if(Math.abs(rA-rD)/Math.max(rA,0.1) > 0.15) {
+        // D не лежит — берём центр как среднее всех описанных окружностей подтреугольников
+        const cc2=circumcenter(pa,pb,pd);
+        const cc3=circumcenter(pa,pc,pd);
+        if(cc2&&cc3) {
+          cc={x:(cc.x+cc2.x+cc3.x)/3, y:(cc.y+cc2.y+cc3.y)/3};
+        }
+      }
+      rc = (dist(cc,pa)+dist(cc,pb)+dist(cc,pc)+dist(cc,pd))/4;
+      if(rc>0.5) {
+        const cLabel = raw.match(/центр[а-яё]*\s+описанн[а-яё]*\s+([A-Z])|описанн[а-яё]*\s+окружн[а-яё]*\s+с\s+центром\s+([A-Z])/i);
+        const cl2=(cLabel&&(cLabel[1]||cLabel[2]))||'O';
+        const Oc=P(cc.x,cc.y,cl2);
+        s.circles.push({center:Oc,radius:rc});
+        // Пунктирные радиусы к вершинам
+        [pa,pb,pc,pd].forEach(v=>s.dashed.push([Oc,v]));
       }
     }
   }
 
   // --- Single bisector at a vertex in quad ---
   if(ctx.features.includes('bisector') || /биссектрис/.test(tl)) {
-    // already handled if two bisectors; handle single bisector
-    const bm = raw.match(/биссектрис[а-яёa-z0-9]*\s+угл[а-яёa-z0-9]*\s+([A-Z])[^и]/i)
-             || raw.match(/биссектрис[а-яёa-z0-9]*\s+(?:из\s+)?(?:вершины\s+)?([A-Z])\s/i);
-    if(bm) {
-      const fromL = bm[1].toUpperCase();
+    // Определяем вершину, из которой проведена биссектриса
+    // Порядок поиска: "биссектриса угла D", "из угла D", "биссектриса из вершины D", "биссектриса D"
+    let fromL = null;
+    {
+      const m = raw.match(/биссектрис[а-яёa-z0-9]*\s+угл[а-яёa-z0-9]*\s+([A-Z])/i)
+             || raw.match(/из\s+угл[а-яёa-z0-9]*\s+([A-Z])/i)
+             || raw.match(/биссектрис[а-яёa-z0-9]*\s+(?:из\s+)?(?:вершины\s+)?([A-Z])\b/i)
+             || raw.match(/биссектрис[а-яёa-z0-9]*\s+([A-Z])\s/i);
+      if(m) {
+        const cand = m[1].toUpperCase();
+        if(labs.includes(cand)) fromL = cand;
+      }
+    }
+    if(fromL) {
       const idx = labs.indexOf(fromL);
-      if(idx >= 0) {
-        const pts4 = labs.map(l => pts[l]);
-        const bd = quadBisDir(idx, pts4, labs);
-        if(bd) {
-          // intersect with opposite sides
+      const pts4 = labs.map(l => pts[l]);
+      const bd = quadBisDir(idx, pts4, labs);
+      if(bd) {
+        // Имя конечной точки — ищем в тексте ("биссектриса AB" → B, или "точке E")
+        const segM = raw.match(new RegExp('биссектрис[а-яёa-z0-9]*\\s+' + fromL + '([A-Za-z])', 'i'));
+        const ptM  = raw.match(/в\s+точке\s+([A-Z])/i);
+        let endL = null;
+        if(segM) { const c=segM[1].toUpperCase(); if(!labs.includes(c)) endL=c; }
+        if(!endL && ptM && !labs.includes(ptM[1].toUpperCase())) endL = ptM[1].toUpperCase();
+        // Противоположная вершина (для ромба биссектриса = диагональ)
+        const oppL = labs[(idx + 2) % 4];
+        const oppPt = pts[oppL];
+        // Проверяем, совпадает ли направление биссектрисы с направлением на oppPt
+        const dirToOpp = oppPt ? { x: oppPt.x - bd.vp.x, y: oppPt.y - bd.vp.y } : null;
+        const len_ = dirToOpp ? Math.hypot(dirToOpp.x, dirToOpp.y) : 0;
+        const dotProd = dirToOpp && len_ > 0
+          ? (bd.x * dirToOpp.x + bd.y * dirToOpp.y) / len_ : 0;
+        const isRhombusDiag = dotProd > 0.97;
+        if(isRhombusDiag && oppPt) {
+          // Ромб: биссектриса = диагональ; рисуем до противоположной вершины
+          s.dashed.push([pts[fromL], oppPt]);
+          // Отметки равных полуугла
+          const prev=labs[(idx+3)%4], next_=labs[(idx+1)%4];
+          if(pts[prev]&&pts[next_]) {
+            s.angleMarks.push({v:pts[fromL], d1:pts[prev], d2:oppPt, label:''});
+            s.angleMarks.push({v:pts[fromL], d1:oppPt,    d2:pts[next_], label:''});
+          }
+          if(endL && endL !== oppL) P(oppPt.x, oppPt.y, endL);
+        } else {
+          // Общий случай: пересекаем с противоположными сторонами
           const oppSides = sides.filter(([x,y]) => x!==fromL && y!==fromL);
           let best = null, bestD = Infinity;
-          const end = {x: bd.vp.x + bd.x*1000, y: bd.vp.y + bd.y*1000};
+          const end_ = {x: bd.vp.x + bd.x*1000, y: bd.vp.y + bd.y*1000};
           for(const [sl1,sl2] of oppSides) {
-            const ip = lineIntersect(bd.vp, end, pts[sl1], pts[sl2]);
+            const ip = lineIntersect(bd.vp, end_, pts[sl1], pts[sl2]);
             if(ip) {
               const d_ = dist(bd.vp, ip);
               if(d_ > 1 && d_ < bestD) { bestD=d_; best=ip; }
             }
           }
           if(best) {
-            const bLabel = raw.match(/биссектрис[а-яёa-z0-9]*\s+[A-Z]{2}/i)
-              ? raw.match(/биссектрис[а-яёa-z0-9]*\s+([A-Z])([A-Z])/i)?.[2] : 'E';
-            const pE = P(best.x, best.y, bLabel||'E');
-            s.dashed.push([bd.vp, pE]);
+            // Выбрать имя конечной точки, не совпадающее с вершиной
+            if(!endL || labs.includes(endL)) {
+              for(const cand of ['E','K','P','T','Q']) {
+                if(!labs.includes(cand) && !pts[cand]) { endL=cand; break; }
+              }
+            }
+            const pE = P(best.x, best.y, endL || 'E');
+            s.dashed.push([pts[fromL], pE]);
           }
         }
       }
